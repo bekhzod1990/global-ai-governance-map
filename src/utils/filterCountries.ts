@@ -103,12 +103,32 @@ function filterMatchesCountry(country: Country, filters: FilterState): boolean {
   return true;
 }
 
+// Cache keyed by serialised filter state. Filter inputs are small and
+// JSON-stringifiable; recomputing across 192 countries on every hover was
+// the dominant render cost in the WorldMap.
+const FILTER_CACHE = new Map<string, CountryMatchResult[]>();
+
+function filterKey(filters: FilterState): string {
+  return JSON.stringify(filters);
+}
+
 export function filterCountries(filters: FilterState): CountryMatchResult[] {
-  return COUNTRIES.filter((c) => c.iso3 !== "EUU").map((c) => ({
+  const key = filterKey(filters);
+  const cached = FILTER_CACHE.get(key);
+  if (cached) return cached;
+  const result = COUNTRIES.filter((c) => c.iso3 !== "EUU").map((c) => ({
     iso3: c.iso3,
     country: c,
     matchesFilter: filterMatchesCountry(c, filters),
   }));
+  // Bound the cache; typical sessions hit a handful of distinct filter
+  // combos. Evict oldest entry past 32 to avoid unbounded growth.
+  if (FILTER_CACHE.size >= 32) {
+    const first = FILTER_CACHE.keys().next().value;
+    if (first) FILTER_CACHE.delete(first);
+  }
+  FILTER_CACHE.set(key, result);
+  return result;
 }
 
 export function countActiveFilters(filters: FilterState): number {

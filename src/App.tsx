@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useReducer, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useReducer, useState } from "react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import { DEFAULT_FILTER_STATE, type FilterState, type LensKind, type FrontierLab } from "./types";
 import { WorldMap } from "./components/WorldMap";
 import { Filters } from "./components/Filters";
@@ -8,8 +9,6 @@ import { CountryTooltip } from "./components/CountryTooltip";
 import { SearchBox } from "./components/SearchBox";
 import { Legend } from "./components/Legend";
 import { LensSwitch } from "./components/LensSwitch";
-import { NetworkView } from "./components/NetworkView";
-import { TimelineView } from "./components/TimelineView";
 import { WalkthroughOverlay } from "./components/WalkthroughOverlay";
 import { runDevValidation } from "./utils/validateData";
 import { COUNTRIES } from "./data/countries";
@@ -17,6 +16,19 @@ import { INTERNATIONAL_INSTRUMENTS } from "./data/internationalInstruments";
 import { NATIONAL_AI_REGULATIONS } from "./data/nationalAIRegulations";
 import { FRONTIER_LABS, LAB_BY_ID } from "./data/frontierLabs";
 import { DEPENDENCY_EDGES } from "./data/dependencies";
+
+// Network + Timeline lenses are non-default. Lazy-load them so d3-force
+// and the timeline list don't ship in the initial bundle.
+const NetworkView = lazy(() => import("./components/NetworkView").then((m) => ({ default: m.NetworkView })));
+const TimelineView = lazy(() => import("./components/TimelineView").then((m) => ({ default: m.TimelineView })));
+
+function LensFallback() {
+  return (
+    <div className="flex h-full w-full items-center justify-center bg-canvas-surface text-xs text-ink-500">
+      Loading view…
+    </div>
+  );
+}
 
 type Action =
   | { type: "set"; filters: FilterState }
@@ -204,12 +216,18 @@ export default function App() {
           />
         )}
         {lens === "network" && (
-          <NetworkView
-            selectedNodeId={networkSelection}
-            onSelectNode={handleNetworkSelect}
-          />
+          <Suspense fallback={<LensFallback />}>
+            <NetworkView
+              selectedNodeId={networkSelection}
+              onSelectNode={handleNetworkSelect}
+            />
+          </Suspense>
         )}
-        {lens === "timeline" && <TimelineView />}
+        {lens === "timeline" && (
+          <Suspense fallback={<LensFallback />}>
+            <TimelineView />
+          </Suspense>
+        )}
 
         {/* Floating legend + lab toggle, bottom-left */}
         {showsMap && (
@@ -294,6 +312,8 @@ export default function App() {
 
       {/* Suppress unused warnings */}
       <div className="hidden">{LAB_BY_ID.openai?.name}</div>
+
+      <SpeedInsights />
     </div>
   );
 }

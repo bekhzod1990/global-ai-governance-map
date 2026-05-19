@@ -7,8 +7,11 @@ import { filterCountries } from "../utils/filterCountries";
 import { getMapStyle } from "../utils/getMapColor";
 import { FRONTIER_LABS } from "../data/frontierLabs";
 import { LabPin } from "./LabPin";
+// Bundle the world topojson locally — eliminates the unpkg round-trip and
+// removes a known cause of first-paint stall when the CDN is slow/offline.
+import worldTopo from "world-atlas/countries-110m.json";
 
-const GEO_URL = "https://unpkg.com/world-atlas@2/countries-110m.json";
+const GEO_DATA = worldTopo as unknown as Parameters<typeof Geographies>[0]["geography"];
 
 interface Props {
   filters: FilterState;
@@ -81,7 +84,7 @@ export function WorldMap({
       >
         <Sphere id="globe-sphere" stroke="#E2E8F0" strokeWidth={0.5} fill="#F8FAFC" />
         <Graticule stroke="#E2E8F0" strokeWidth={0.4} step={[20, 20]} />
-        <Geographies geography={GEO_URL}>
+        <Geographies geography={GEO_DATA}>
           {({ geographies }) =>
             geographies.map((geo) => {
               const numericId = (geo.id as string) ?? geo.properties?.id;

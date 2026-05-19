@@ -44,7 +44,19 @@ const EMPTY_SUMMARY: CountryGovernanceSummary = {
   hasFrontierAIRelevant: false,
 };
 
+// Cache: dataset is static at runtime, so per-iso3 summary can be memoised
+// once forever. Tooltips on hover hit this O(1) instead of recomputing.
+const SUMMARY_CACHE = new Map<string, CountryGovernanceSummary>();
+
 export function getCountryGovernanceSummary(iso3: string): CountryGovernanceSummary {
+  const cached = SUMMARY_CACHE.get(iso3);
+  if (cached) return cached;
+  const computed = computeCountryGovernanceSummary(iso3);
+  SUMMARY_CACHE.set(iso3, computed);
+  return computed;
+}
+
+function computeCountryGovernanceSummary(iso3: string): CountryGovernanceSummary {
   const country = COUNTRY_BY_ISO3[iso3];
   if (!country) return { ...EMPTY_SUMMARY };
 

@@ -20,17 +20,22 @@ export const LAYER_LABEL: Record<string, string> = {
   empty: "No AI-specific data",
 };
 
+const LAYER_CACHE = new Map<string, keyof typeof LAYER_FILL>();
+
 function pickPrimaryLayer(iso3: string): keyof typeof LAYER_FILL {
+  const cached = LAYER_CACHE.get(iso3);
+  if (cached) return cached;
   const s = getCountryGovernanceSummary(iso3);
-  if (s.hqLabs.length > 0) return "corporate";
-  if (s.hasBindingNationalLaw) return "national_binding";
-  const hasProposed = s.nationalRegulations.some(
-    (r) => r.bindingStatus === "proposed" || r.bindingStatus === "mixed"
-  );
-  if (hasProposed) return "national_proposed";
-  if (s.hasAnyAIRule) return "voluntary";
-  if (s.participations.length > 0) return "international";
-  return "empty";
+  let layer: keyof typeof LAYER_FILL;
+  if (s.hqLabs.length > 0) layer = "corporate";
+  else if (s.hasBindingNationalLaw) layer = "national_binding";
+  else if (s.nationalRegulations.some((r) => r.bindingStatus === "proposed" || r.bindingStatus === "mixed"))
+    layer = "national_proposed";
+  else if (s.hasAnyAIRule) layer = "voluntary";
+  else if (s.participations.length > 0) layer = "international";
+  else layer = "empty";
+  LAYER_CACHE.set(iso3, layer);
+  return layer;
 }
 
 export interface MapStyle {
