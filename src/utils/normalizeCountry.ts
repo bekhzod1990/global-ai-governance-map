@@ -5,7 +5,8 @@ countries.registerLocale(enLocale);
 
 const NUMERIC_TO_A3: Record<string, string> = {};
 
-for (const a3 of countries.getAlpha3Codes() as unknown as string[]) {
+const a3Map = countries.getAlpha3Codes() as Record<string, string>;
+for (const a3 of Object.keys(a3Map)) {
   const numeric = countries.alpha3ToNumeric(a3);
   if (numeric) NUMERIC_TO_A3[numeric] = a3;
 }
