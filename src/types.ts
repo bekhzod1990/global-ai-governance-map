@@ -154,6 +154,104 @@ export interface SourceNote {
   note: string;
 }
 
+// ===== Frontier-lab actor layer (Tier 1.A) =====
+export type SafetyFrameworkMaturity = "published" | "draft" | "internal" | "none";
+
+export interface FrontierLab {
+  id: string;
+  name: string;
+  hqIso3: string;
+  hqCountryName: string;
+  flagshipModels: string[];
+  safetyFramework?: {
+    name: string;
+    maturity: SafetyFrameworkMaturity;
+    sourceName: string;
+    sourceUrl: string;
+  };
+  isFMFMember: boolean;
+  regulatoryExposureIds: string[];
+  powerScore: number; // 1-5
+  summary: string;
+  sourceName: string;
+  sourceUrl: string;
+  notes?: string;
+}
+
+// ===== Infrastructure layer (Tier 1.B) =====
+export type InfrastructureType = "chips" | "cloud" | "export_control";
+
+export interface InfrastructureNode {
+  id: string;
+  name: string;
+  type: InfrastructureType;
+  jurisdiction?: string;
+  hqIso3?: string;
+  powerScore: number;
+  description: string;
+  scopeCaveat: string;
+  sourceName: string;
+  sourceUrl: string;
+}
+
+// ===== Dependency-edge layer (Tier 1.C) =====
+export type RelationshipKind =
+  | "regulates"
+  | "depends_on"
+  | "constrains"
+  | "influences"
+  | "coordinates"
+  | "participates_in";
+
+export type GraphNodeType =
+  | "country"
+  | "lab"
+  | "instrument"
+  | "national_rule"
+  | "infrastructure";
+
+export interface GraphEdge {
+  id: string;
+  sourceType: GraphNodeType;
+  sourceId: string;
+  targetType: GraphNodeType;
+  targetId: string;
+  relationship: RelationshipKind;
+  strength: number; // 1-5
+  description: string;
+}
+
+// ===== Subnational AI rules (Tier 2.H) =====
+export interface SubnationalAIRule {
+  id: string;
+  name: string;
+  countryIso3: string;
+  jurisdictionName: string;
+  jurisdictionType: "us_state" | "us_city" | "eu_member" | "province" | "other";
+  type: NationalRegulationType;
+  bindingStatus: NationalBindingStatus;
+  aiSpecific: true;
+  status: string;
+  dateAdopted?: string;
+  dateInForce?: string;
+  summary: string;
+  sourceName: string;
+  sourceUrl: string;
+}
+
+// ===== Guided walkthrough (Tier 2.F) =====
+export type LensKind = "geography" | "layer" | "network" | "timeline";
+
+export interface WalkthroughStep {
+  id: string;
+  title: string;
+  narrative: string;
+  lens: LensKind;
+  filterPatch?: Partial<FilterState>;
+  highlightNodeIds?: string[];
+}
+
+// ===== Application state =====
 export interface FilterState {
   selectedInstrumentIds: string[];
   instrumentMatchMode: "OR" | "AND";
@@ -161,6 +259,7 @@ export interface FilterState {
   selectedBindingStatuses: InstrumentBindingStatus[];
   selectedOrganizations: OrganizationType[];
   selectedRegions: Region[];
+  selectedLabIds: string[];
   hasBindingNationalLaw: "any" | "yes" | "no";
   hasAnyAIRule: "any" | "yes" | "no";
   frontierAIRelevant: "any" | "yes" | "no";
@@ -174,6 +273,7 @@ export const DEFAULT_FILTER_STATE: FilterState = {
   selectedBindingStatuses: [],
   selectedOrganizations: [],
   selectedRegions: [],
+  selectedLabIds: [],
   hasBindingNationalLaw: "any",
   hasAnyAIRule: "any",
   frontierAIRelevant: "any",

@@ -1,6 +1,37 @@
-import type { FilterState, InternationalParticipation } from "../types";
+import type { FilterState, InternationalParticipation, LensKind } from "../types";
 import { PARTICIPATION_BY_COUNTRY } from "../data/participation";
 import { getCountryGovernanceSummary } from "./getCountryGovernanceSummary";
+
+const LAYER_FILL: Record<string, string> = {
+  corporate: "#B45309",       // gold-700 — has frontier lab HQ
+  national_binding: "#1D4ED8", // dark blue — binding national AI law
+  national_proposed: "#60A5FA", // mid blue — proposed / mixed
+  voluntary: "#BFDBFE",       // light blue — guidance / voluntary / strategy
+  international: "#C4B5FD",   // violet-300 — only international participation
+  empty: "#E5E7EB",
+};
+
+export const LAYER_LABEL: Record<string, string> = {
+  corporate: "Has frontier-lab HQ",
+  national_binding: "Binding national AI law",
+  national_proposed: "Proposed / mixed national rule",
+  voluntary: "Guidance / strategy only",
+  international: "International participation only",
+  empty: "No AI-specific data",
+};
+
+function pickPrimaryLayer(iso3: string): keyof typeof LAYER_FILL {
+  const s = getCountryGovernanceSummary(iso3);
+  if (s.hqLabs.length > 0) return "corporate";
+  if (s.hasBindingNationalLaw) return "national_binding";
+  const hasProposed = s.nationalRegulations.some(
+    (r) => r.bindingStatus === "proposed" || r.bindingStatus === "mixed"
+  );
+  if (hasProposed) return "national_proposed";
+  if (s.hasAnyAIRule) return "voluntary";
+  if (s.participations.length > 0) return "international";
+  return "empty";
+}
 
 export interface MapStyle {
   fill: string;
@@ -27,8 +58,12 @@ const OUTLINE = {
 export function getMapStyle(
   iso3: string,
   filters: FilterState,
-  matchesFilter: boolean
+  matchesFilter: boolean,
+  lens: LensKind = "geography"
 ): MapStyle {
+  if (lens === "layer") {
+    return getLayerStyle(iso3, filters, matchesFilter);
+  }
   const summary = getCountryGovernanceSummary(iso3);
 
   let fill: string;
@@ -83,3 +118,32 @@ export function getMapStyle(
 
   return { fill, outline, strokeWidth, strokeDasharray, opacity };
 }
+
+function getLayerStyle(
+  iso3: string,
+  filters: FilterState,
+  matchesFilter: boolean
+): MapStyle {
+  const layer = pickPrimaryLayer(iso3);
+  const fill = LAYER_FILL[layer];
+
+  let outline = OUTLINE.base;
+  let strokeWidth = 0.5;
+  let strokeDasharray: string | undefined;
+  let opacity = 1;
+
+  if (filters.selectedInstrumentIds.length > 0) {
+    if (matchesFilter) {
+      outline = OUTLINE.match;
+      strokeWidth = 1.5;
+    } else {
+      opacity = 0.25;
+    }
+  } else if (!matchesFilter) {
+    opacity = 0.25;
+  }
+
+  return { fill, outline, strokeWidth, strokeDasharray, opacity };
+}
+
+export { pickPrimaryLayer };

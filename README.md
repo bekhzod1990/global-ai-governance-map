@@ -1,6 +1,15 @@
 # Global AI Governance Map
 
-An interactive policy-research dashboard. Maps **AI-specific** national regulations and international AI governance instruments — who has a binding AI law, who signed which AI treaty, who endorsed which AI declaration, and so on. Hover or click a country, or filter by an international AI instrument such as the Bletchley Declaration or the Council of Europe AI Convention.
+An interactive policy-research dashboard. Maps **frontier-AI governance** through four switchable lenses — geography, governance layer, dependency network, and chronology — over a dataset of countries, frontier labs, international AI instruments, national AI rules, subnational rules, infrastructure choke-points, and the dependencies between them.
+
+## Four lenses on the same data
+
+- **Geography** — country fill by binding status of national AI rule, with frontier-lab HQ pins overlaid (13 labs, sized by power score). Click any country or lab pin for a detail drawer.
+- **Layers** — recolours countries by the highest governance layer present (frontier-lab HQ → binding national law → proposed → guidance → international participation only).
+- **Network** — force-directed graph of all actors and edges: countries, labs, instruments, national rules, and infrastructure, with edge types `regulates / depends_on / constrains / influences / coordinates / participates_in` (edge thickness = strength).
+- **Timeline** — 115+ AI governance milestones plotted from 2017 (Finland AI Programme) → 2026 (Kazakhstan AI Law, Taiwan AI Basic Act, Vietnam AI Law).
+
+A **"Take the tour"** button runs a guided 5-step walkthrough (① Who builds frontier AI? → ② Who can actually stop them? → ③ International coordinators → ④ Evaluations & standards → ⑤ Compute & chips).
 
 The app is English-only, runs entirely client-side, and ships with a Vercel-ready build.
 

@@ -1,6 +1,7 @@
 import { COUNTRIES } from "../data/countries";
 import { INSTRUMENT_BY_ID } from "../data/internationalInstruments";
 import { PARTICIPATION_BY_COUNTRY } from "../data/participation";
+import { LAB_BY_ID } from "../data/frontierLabs";
 import type { Country, FilterState } from "../types";
 import { getCountryGovernanceSummary } from "./getCountryGovernanceSummary";
 
@@ -73,6 +74,14 @@ function filterMatchesCountry(country: Country, filters: FilterState): boolean {
   // Region filter
   if (filters.selectedRegions.length > 0) {
     if (!filters.selectedRegions.includes(country.region)) return false;
+  }
+
+  // Frontier-lab filter: country matches if any selected lab is HQ'd there
+  if (filters.selectedLabIds.length > 0) {
+    const hqMatch = filters.selectedLabIds.some(
+      (id) => LAB_BY_ID[id]?.hqIso3 === country.iso3
+    );
+    if (!hqMatch) return false;
   }
 
   // Has binding national AI law

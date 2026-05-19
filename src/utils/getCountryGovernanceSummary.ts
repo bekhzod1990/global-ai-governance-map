@@ -3,11 +3,18 @@ import { EU_MEMBER_ISO3 } from "../data/euMembers";
 import { INSTRUMENT_BY_ID } from "../data/internationalInstruments";
 import { NATIONAL_AI_REGULATIONS } from "../data/nationalAIRegulations";
 import { PARTICIPATION_BY_COUNTRY } from "../data/participation";
+import { getLabsByHqIso3, LAB_BY_ID } from "../data/frontierLabs";
+import { getSubnationalRulesByCountry } from "../data/subnationalRules";
+import { EDGES_BY_NODE } from "../data/dependencies";
+import { INFRA_BY_ID } from "../data/infrastructure";
 import type {
   Country,
+  FrontierLab,
+  GraphEdge,
   InternationalInstrument,
   InternationalParticipation,
   NationalAIRegulation,
+  SubnationalAIRule,
 } from "../types";
 
 export interface CountryGovernanceSummary {
@@ -17,6 +24,9 @@ export interface CountryGovernanceSummary {
     participation: InternationalParticipation;
     instrument: InternationalInstrument;
   }>;
+  hqLabs: FrontierLab[];
+  subnationalRules: SubnationalAIRule[];
+  edges: { outgoing: GraphEdge[]; incoming: GraphEdge[] };
   hasBindingNationalLaw: boolean;
   hasAnyAIRule: boolean;
   hasFrontierAIRelevant: boolean;
@@ -26,6 +36,9 @@ const EMPTY_SUMMARY: CountryGovernanceSummary = {
   country: null,
   nationalRegulations: [],
   participations: [],
+  hqLabs: [],
+  subnationalRules: [],
+  edges: { outgoing: [], incoming: [] },
   hasBindingNationalLaw: false,
   hasAnyAIRule: false,
   hasFrontierAIRelevant: false,
@@ -62,20 +75,43 @@ export function getCountryGovernanceSummary(iso3: string): CountryGovernanceSumm
       return a.instrument.name.localeCompare(b.instrument.name);
     });
 
-  const hasBindingNationalLaw = regulations.some(
-    (r) => r.bindingStatus === "binding"
-  );
-  const hasAnyAIRule = regulations.length > 0;
+  const hqLabs = getLabsByHqIso3(iso3).sort((a, b) => b.powerScore - a.powerScore);
+  const subnationalRules = getSubnationalRulesByCountry(iso3);
+  const edges = EDGES_BY_NODE[iso3] ?? { outgoing: [], incoming: [] };
+
+  const hasBindingNationalLaw = regulations.some((r) => r.bindingStatus === "binding");
+  const hasAnyAIRule = regulations.length > 0 || subnationalRules.length > 0;
   const hasFrontierAIRelevant =
     regulations.some((r) => r.frontierAIRelevant) ||
-    participations.some(({ instrument }) => instrument.frontierAIRelevant);
+    participations.some(({ instrument }) => instrument.frontierAIRelevant) ||
+    hqLabs.length > 0;
 
   return {
     country,
     nationalRegulations: regulations,
     participations,
+    hqLabs,
+    subnationalRules,
+    edges,
     hasBindingNationalLaw,
     hasAnyAIRule,
     hasFrontierAIRelevant,
   };
+}
+
+// Resolve any graph node id into a display label + node type
+export interface ResolvedNode {
+  id: string;
+  name: string;
+  kind: "country" | "lab" | "instrument" | "national_rule" | "infrastructure";
+}
+
+export function resolveNode(id: string): ResolvedNode | null {
+  if (COUNTRY_BY_ISO3[id]) return { id, name: COUNTRY_BY_ISO3[id].name, kind: "country" };
+  if (LAB_BY_ID[id]) return { id, name: LAB_BY_ID[id].name, kind: "lab" };
+  if (INSTRUMENT_BY_ID[id]) return { id, name: INSTRUMENT_BY_ID[id].name, kind: "instrument" };
+  if (INFRA_BY_ID[id]) return { id, name: INFRA_BY_ID[id].name, kind: "infrastructure" };
+  const reg = NATIONAL_AI_REGULATIONS.find((r) => r.id === id);
+  if (reg) return { id, name: reg.name, kind: "national_rule" };
+  return null;
 }

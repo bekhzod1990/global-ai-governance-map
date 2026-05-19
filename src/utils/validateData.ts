@@ -2,6 +2,10 @@ import { COUNTRIES, COUNTRY_BY_ISO3 } from "../data/countries";
 import { INTERNATIONAL_INSTRUMENTS, INSTRUMENT_BY_ID } from "../data/internationalInstruments";
 import { NATIONAL_AI_REGULATIONS, NATIONAL_REG_BY_ID } from "../data/nationalAIRegulations";
 import { INTERNATIONAL_PARTICIPATION } from "../data/participation";
+import { FRONTIER_LABS, LAB_BY_ID } from "../data/frontierLabs";
+import { INFRASTRUCTURE_NODES, INFRA_BY_ID } from "../data/infrastructure";
+import { DEPENDENCY_EDGES } from "../data/dependencies";
+import { SUBNATIONAL_AI_RULES } from "../data/subnationalRules";
 import { hasCyrillic } from "./translateSeedDataToEnglish";
 
 interface ValidationReport {
@@ -82,6 +86,53 @@ export function validateData(): ValidationReport {
     checkCyrillic(`instrument.issuer ${inst.id}`, inst.issuer);
   }
 
+  // Frontier labs
+  const labIds = new Set<string>();
+  for (const lab of FRONTIER_LABS) {
+    if (labIds.has(lab.id)) errors.push(`Duplicate lab id: ${lab.id}`);
+    labIds.add(lab.id);
+    if (!COUNTRY_BY_ISO3[lab.hqIso3]) errors.push(`Lab ${lab.id} HQ iso3 ${lab.hqIso3} not in country list`);
+    if (!lab.sourceUrl) errors.push(`Lab ${lab.id} missing sourceUrl`);
+  }
+
+  // Infrastructure
+  const infraIds = new Set<string>();
+  for (const node of INFRASTRUCTURE_NODES) {
+    if (infraIds.has(node.id)) errors.push(`Duplicate infrastructure id: ${node.id}`);
+    infraIds.add(node.id);
+    if (!node.sourceUrl) errors.push(`Infrastructure ${node.id} missing sourceUrl`);
+  }
+
+  // Edges
+  const edgeIds = new Set<string>();
+  for (const edge of DEPENDENCY_EDGES) {
+    if (edgeIds.has(edge.id)) errors.push(`Duplicate edge: ${edge.id}`);
+    edgeIds.add(edge.id);
+    const endpoints: Array<["source" | "target", string, string]> = [
+      ["source", edge.sourceType, edge.sourceId],
+      ["target", edge.targetType, edge.targetId],
+    ];
+    for (const [side, kind, id] of endpoints) {
+      let ok = false;
+      if (kind === "country") ok = !!COUNTRY_BY_ISO3[id];
+      else if (kind === "lab") ok = !!LAB_BY_ID[id];
+      else if (kind === "instrument") ok = !!INSTRUMENT_BY_ID[id];
+      else if (kind === "national_rule") ok = !!NATIONAL_REG_BY_ID[id];
+      else if (kind === "infrastructure") ok = !!INFRA_BY_ID[id];
+      if (!ok) warnings.push(`Edge ${edge.id} ${side} (${kind}) references unknown id: ${id}`);
+    }
+  }
+
+  // Subnational
+  const subIds = new Set<string>();
+  for (const sub of SUBNATIONAL_AI_RULES) {
+    if (subIds.has(sub.id)) errors.push(`Duplicate subnational id: ${sub.id}`);
+    subIds.add(sub.id);
+    if (!COUNTRY_BY_ISO3[sub.countryIso3])
+      errors.push(`Subnational ${sub.id} references unknown country ${sub.countryIso3}`);
+    if (!sub.sourceUrl) errors.push(`Subnational ${sub.id} missing sourceUrl`);
+  }
+
   return { ok: errors.length === 0, errors, warnings };
 }
 
@@ -91,7 +142,7 @@ export function runDevValidation(): void {
     if (report.errors.length === 0 && report.warnings.length === 0) {
       // eslint-disable-next-line no-console
       console.info(
-        `%c[Data] OK · ${COUNTRIES.length} countries · ${INTERNATIONAL_INSTRUMENTS.length} instruments · ${NATIONAL_AI_REGULATIONS.length} national regs · ${INTERNATIONAL_PARTICIPATION.length} participation rows · ${Object.keys(NATIONAL_REG_BY_ID).length} reg ids indexed`,
+        `%c[Data] OK · ${COUNTRIES.length} countries · ${INTERNATIONAL_INSTRUMENTS.length} instruments · ${NATIONAL_AI_REGULATIONS.length} national regs · ${SUBNATIONAL_AI_RULES.length} subnational rules · ${FRONTIER_LABS.length} frontier labs · ${INFRASTRUCTURE_NODES.length} infrastructure nodes · ${DEPENDENCY_EDGES.length} edges · ${INTERNATIONAL_PARTICIPATION.length} participation rows`,
         "color:#1E40AF;font-weight:600"
       );
     } else {

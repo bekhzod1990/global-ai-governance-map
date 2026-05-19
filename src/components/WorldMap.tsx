@@ -1,21 +1,38 @@
 import { useMemo, useRef, useState, useEffect } from "react";
 import { ComposableMap, Geographies, Geography, Sphere, Graticule } from "react-simple-maps";
-import type { FilterState } from "../types";
+import type { FilterState, FrontierLab, LensKind } from "../types";
 import { numericToAlpha3 } from "../utils/normalizeCountry";
 import { COUNTRY_BY_ISO3 } from "../data/countries";
 import { filterCountries } from "../utils/filterCountries";
 import { getMapStyle } from "../utils/getMapColor";
+import { FRONTIER_LABS } from "../data/frontierLabs";
+import { LabPin } from "./LabPin";
 
 const GEO_URL = "https://unpkg.com/world-atlas@2/countries-110m.json";
 
 interface Props {
   filters: FilterState;
   selectedIso3: string | null;
+  selectedLabId: string | null;
   onSelectCountry: (iso3: string) => void;
+  onSelectLab: (id: string) => void;
   onHover: (data: { iso3: string; name: string; x: number; y: number } | null) => void;
+  onHoverLab?: (data: { lab: FrontierLab; x: number; y: number } | null) => void;
+  showLabs: boolean;
+  lens: LensKind;
 }
 
-export function WorldMap({ filters, selectedIso3, onSelectCountry, onHover }: Props) {
+export function WorldMap({
+  filters,
+  selectedIso3,
+  selectedLabId,
+  onSelectCountry,
+  onSelectLab,
+  onHover,
+  onHoverLab,
+  showLabs,
+  lens,
+}: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState({ width: 1200, height: 700 });
 
@@ -84,7 +101,7 @@ export function WorldMap({ filters, selectedIso3, onSelectCountry, onHover }: Pr
               }
 
               const matches = matchByIso[iso3] ?? true;
-              const style = getMapStyle(iso3, filters, matches);
+              const style = getMapStyle(iso3, filters, matches, lens);
               const isSelected = selectedIso3 === iso3;
               const hoverFill = adjustColor(style.fill, -10);
 
@@ -143,6 +160,27 @@ export function WorldMap({ filters, selectedIso3, onSelectCountry, onHover }: Pr
             })
           }
         </Geographies>
+
+        {showLabs &&
+          FRONTIER_LABS.map((lab) => {
+            const dimmed =
+              filters.selectedLabIds.length > 0 &&
+              !filters.selectedLabIds.includes(lab.id);
+            return (
+              <LabPin
+                key={lab.id}
+                lab={lab}
+                selected={selectedLabId === lab.id}
+                dimmed={dimmed}
+                onClick={onSelectLab}
+                onHover={(l, e) => {
+                  if (!onHoverLab) return;
+                  if (l && e) onHoverLab({ lab: l, x: e.clientX, y: e.clientY });
+                  else onHoverLab(null);
+                }}
+              />
+            );
+          })}
       </ComposableMap>
     </div>
   );

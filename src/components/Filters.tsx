@@ -8,6 +8,7 @@ import type {
   Region,
 } from "../types";
 import { INTERNATIONAL_INSTRUMENTS } from "../data/internationalInstruments";
+import { FRONTIER_LABS } from "../data/frontierLabs";
 import {
   INSTRUMENT_BINDING_LABELS,
   PARTICIPATION_LABELS,
@@ -331,6 +332,42 @@ export function Filters({ filters, onChange, onReset }: Props) {
             onChange={() => toggleArrayValue("selectedOrganizations", o)}
             label={o}
           />
+        ))}
+      </FilterDropdown>
+
+      <FilterDropdown
+        label="Frontier labs"
+        count={filters.selectedLabIds.length}
+        width={260}
+      >
+        {Array.from(
+          FRONTIER_LABS.reduce((map, lab) => {
+            (map.get(lab.hqCountryName) ?? map.set(lab.hqCountryName, []).get(lab.hqCountryName))!.push(lab);
+            return map;
+          }, new Map<string, typeof FRONTIER_LABS>())
+        ).map(([country, labs]) => (
+          <div key={country} className="pb-1">
+            <p className="px-2 pt-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500">
+              {country}
+            </p>
+            {labs.map((lab) => (
+              <CheckboxRow
+                key={lab.id}
+                checked={filters.selectedLabIds.includes(lab.id)}
+                onChange={() => toggleArrayValue("selectedLabIds", lab.id)}
+                label={
+                  <span className="font-medium leading-snug">
+                    {lab.name}
+                    {lab.isFMFMember && (
+                      <span className="ml-1 rounded bg-amber-100 px-1 text-[9px] uppercase tracking-wide text-amber-900">
+                        FMF
+                      </span>
+                    )}
+                  </span>
+                }
+              />
+            ))}
+          </div>
         ))}
       </FilterDropdown>
 

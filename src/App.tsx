@@ -1,19 +1,27 @@
 import { useEffect, useMemo, useReducer, useState } from "react";
-import { DEFAULT_FILTER_STATE, type FilterState } from "./types";
+import { DEFAULT_FILTER_STATE, type FilterState, type LensKind, type FrontierLab } from "./types";
 import { WorldMap } from "./components/WorldMap";
 import { Filters } from "./components/Filters";
 import { CountrySidePanel } from "./components/CountrySidePanel";
+import { LabSidePanel } from "./components/LabSidePanel";
 import { CountryTooltip } from "./components/CountryTooltip";
 import { SearchBox } from "./components/SearchBox";
 import { Legend } from "./components/Legend";
+import { LensSwitch } from "./components/LensSwitch";
+import { NetworkView } from "./components/NetworkView";
+import { TimelineView } from "./components/TimelineView";
+import { WalkthroughOverlay } from "./components/WalkthroughOverlay";
 import { runDevValidation } from "./utils/validateData";
 import { COUNTRIES } from "./data/countries";
 import { INTERNATIONAL_INSTRUMENTS } from "./data/internationalInstruments";
 import { NATIONAL_AI_REGULATIONS } from "./data/nationalAIRegulations";
+import { FRONTIER_LABS, LAB_BY_ID } from "./data/frontierLabs";
+import { DEPENDENCY_EDGES } from "./data/dependencies";
 
 type Action =
   | { type: "set"; filters: FilterState }
   | { type: "reset" }
+  | { type: "patch"; patch: Partial<FilterState> }
   | { type: "select-instrument"; id: string };
 
 function filterReducer(state: FilterState, action: Action): FilterState {
@@ -22,6 +30,8 @@ function filterReducer(state: FilterState, action: Action): FilterState {
       return action.filters;
     case "reset":
       return { ...DEFAULT_FILTER_STATE };
+    case "patch":
+      return { ...DEFAULT_FILTER_STATE, ...action.patch };
     case "select-instrument":
       return {
         ...state,
@@ -37,13 +47,19 @@ function filterReducer(state: FilterState, action: Action): FilterState {
 export default function App() {
   const [filters, dispatch] = useReducer(filterReducer, DEFAULT_FILTER_STATE);
   const [selectedIso3, setSelectedIso3] = useState<string | null>(null);
+  const [selectedLabId, setSelectedLabId] = useState<string | null>(null);
   const [hover, setHover] = useState<{
     iso3: string;
     name: string;
     x: number;
     y: number;
   } | null>(null);
+  const [hoverLab, setHoverLab] = useState<{ lab: FrontierLab; x: number; y: number } | null>(null);
   const [noticeOpen, setNoticeOpen] = useState(true);
+  const [showLabs, setShowLabs] = useState(true);
+  const [lens, setLens] = useState<LensKind>("geography");
+  const [walkthroughStep, setWalkthroughStep] = useState<number | null>(null);
+  const [networkSelection, setNetworkSelection] = useState<string | null>(null);
 
   useEffect(() => {
     runDevValidation();
@@ -54,33 +70,63 @@ export default function App() {
       countries: COUNTRIES.filter((c) => c.iso3 !== "EUU").length,
       instruments: INTERNATIONAL_INSTRUMENTS.length,
       nationalRegs: NATIONAL_AI_REGULATIONS.length,
+      labs: FRONTIER_LABS.length,
+      edges: DEPENDENCY_EDGES.length,
     }),
     []
   );
 
+  const showsMap = lens === "geography" || lens === "layer";
+
+  function handleSelectCountry(iso3: string) {
+    setSelectedLabId(null);
+    setSelectedIso3(iso3);
+  }
+
+  function handleSelectLab(id: string) {
+    setSelectedIso3(null);
+    setSelectedLabId(id);
+  }
+
+  function handleNetworkSelect(id: string, kind: string) {
+    setNetworkSelection(id);
+    if (kind === "country") handleSelectCountry(id);
+    else if (kind === "lab") handleSelectLab(id);
+  }
+
+  function handleWalkthroughApply(patch: Partial<FilterState>, nextLens: LensKind) {
+    dispatch({ type: "patch", patch });
+    setLens(nextLens);
+  }
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-canvas">
-      {/* Compact header */}
       <header className="z-20 flex shrink-0 items-center gap-4 border-b border-canvas-line bg-canvas-surface px-5 py-2.5">
         <div className="min-w-0">
           <h1 className="text-base font-semibold leading-tight tracking-tight text-ink-900">
             Global AI Governance Map
           </h1>
           <p className="text-[11px] leading-tight text-ink-500">
-            AI-specific national regulations &amp; international AI governance instruments
+            Frontier AI governance: actors, instruments, dependencies
           </p>
         </div>
 
         <div className="ml-auto flex flex-1 items-center justify-end gap-3">
-          <span className="hidden text-[11px] text-ink-500 lg:inline">
-            {stats.countries} countries · {stats.instruments} instruments · {stats.nationalRegs} national rules
+          <span className="hidden text-[11px] text-ink-500 xl:inline">
+            {stats.countries} countries · {stats.labs} labs · {stats.instruments} instruments · {stats.nationalRegs} national rules · {stats.edges} edges
           </span>
+          <LensSwitch value={lens} onChange={setLens} />
+          <button
+            type="button"
+            onClick={() => setWalkthroughStep(0)}
+            className="rounded-md border border-accent bg-accent/5 px-2.5 py-1.5 text-xs font-medium text-accent hover:bg-accent/10"
+          >
+            Take the tour
+          </button>
           <div className="w-full max-w-xs">
             <SearchBox
-              onSelectCountry={(iso3) => setSelectedIso3(iso3)}
-              onSelectInstrument={(id) =>
-                dispatch({ type: "select-instrument", id })
-              }
+              onSelectCountry={(iso3) => handleSelectCountry(iso3)}
+              onSelectInstrument={(id) => dispatch({ type: "select-instrument", id })}
             />
           </div>
         </div>
@@ -95,7 +141,7 @@ export default function App() {
         />
       </div>
 
-      {/* Optional thin data-quality banner (dismissible) */}
+      {/* Optional thin data-quality banner */}
       {noticeOpen && (
         <div className="z-10 flex shrink-0 items-center gap-3 border-b border-amber-200 bg-amber-50/70 px-5 py-1.5 text-[11px] text-amber-900">
           <svg
@@ -115,9 +161,8 @@ export default function App() {
             <path d="M12 16h.01" />
           </svg>
           <p className="flex-1 truncate">
-            <span className="font-semibold">Scope:</span> AI-specific instruments only — privacy,
-            cybersecurity, and export-control laws are out of scope unless explicitly AI-specific.
-            May 2026 snapshot.
+            <span className="font-semibold">Scope:</span> AI-specific instruments + frontier-AI infrastructure
+            (chips, cloud, BIS export controls). May 2026 snapshot.
           </p>
           <button
             type="button"
@@ -143,38 +188,70 @@ export default function App() {
         </div>
       )}
 
-      {/* Map — fills all remaining vertical space */}
+      {/* Main canvas — switches between Map / Network / Timeline lenses */}
       <main className="relative flex-1 overflow-hidden">
-        <WorldMap
-          filters={filters}
-          selectedIso3={selectedIso3}
-          onSelectCountry={(iso3) => setSelectedIso3(iso3)}
-          onHover={(data) => setHover(data)}
-        />
+        {showsMap && (
+          <WorldMap
+            filters={filters}
+            selectedIso3={selectedIso3}
+            selectedLabId={selectedLabId}
+            onSelectCountry={handleSelectCountry}
+            onSelectLab={handleSelectLab}
+            onHover={(data) => setHover(data)}
+            onHoverLab={(data) => setHoverLab(data)}
+            showLabs={showLabs}
+            lens={lens}
+          />
+        )}
+        {lens === "network" && (
+          <NetworkView
+            selectedNodeId={networkSelection}
+            onSelectNode={handleNetworkSelect}
+          />
+        )}
+        {lens === "timeline" && <TimelineView />}
 
-        {/* Floating legend, bottom-left */}
-        <div className="pointer-events-none absolute bottom-4 left-4 z-10 max-w-xs">
-          <div className="pointer-events-auto">
-            <Legend />
+        {/* Floating legend + lab toggle, bottom-left */}
+        {showsMap && (
+          <div className="pointer-events-none absolute bottom-4 left-4 z-10 max-w-xs space-y-2">
+            <div className="pointer-events-auto">
+              <Legend />
+            </div>
+            <label className="pointer-events-auto inline-flex cursor-pointer items-center gap-2 rounded-md border border-canvas-line bg-white px-2.5 py-1 text-[11px] font-medium text-ink-700 shadow-panel">
+              <input
+                type="checkbox"
+                checked={showLabs}
+                onChange={(e) => setShowLabs(e.target.checked)}
+                className="h-3.5 w-3.5 cursor-pointer rounded border-canvas-line text-accent focus:ring-accent"
+              />
+              Show frontier-lab HQs ({stats.labs})
+            </label>
           </div>
-        </div>
+        )}
 
-        {/* Floating source badge, bottom-right */}
-        <div className="pointer-events-none absolute bottom-4 right-4 z-10 max-w-md text-right">
-          <p className="pointer-events-auto inline-block rounded-md bg-white/85 px-2.5 py-1 text-[10px] text-ink-500 shadow-panel backdrop-blur">
-            Official sources: EUR-Lex · OECD · UNESCO · Council of Europe · ISO · GOV.UK · NIST · CAC · MSIT · IMDA · MeitY · AU · ASEAN · APEC · CAIDP Index 2026
-          </p>
-        </div>
+        {/* Floating source badge */}
+        {showsMap && (
+          <div className="pointer-events-none absolute bottom-4 right-4 z-10 max-w-md text-right">
+            <p className="pointer-events-auto inline-block rounded-md bg-white/85 px-2.5 py-1 text-[10px] text-ink-500 shadow-panel backdrop-blur">
+              Sources: EUR-Lex · OECD · UNESCO · CoE · ISO · GOV.UK · NIST · CAC · MSIT · IMDA · MeitY · AU · ASEAN · APEC · CAIDP Index 2026 · doc1 frontier-AI brief
+            </p>
+          </div>
+        )}
 
-        {selectedIso3 && (
+        {selectedIso3 && showsMap && (
           <CountrySidePanel
             iso3={selectedIso3}
             onClose={() => setSelectedIso3(null)}
+            onSelectLab={handleSelectLab}
           />
+        )}
+
+        {selectedLabId && (
+          <LabSidePanel labId={selectedLabId} onClose={() => setSelectedLabId(null)} />
         )}
       </main>
 
-      {hover && (
+      {hover && showsMap && !hoverLab && (
         <CountryTooltip
           iso3={hover.iso3}
           countryName={hover.name}
@@ -183,6 +260,40 @@ export default function App() {
           activeFilterInstrumentIds={filters.selectedInstrumentIds}
         />
       )}
+
+      {hoverLab && showsMap && (
+        <div
+          role="tooltip"
+          className="pointer-events-none fixed z-50 rounded-xl border border-canvas-line bg-white/95 px-3 py-2 text-xs shadow-drawer backdrop-blur"
+          style={{ left: hoverLab.x + 14, top: hoverLab.y + 14, maxWidth: 280 }}
+        >
+          <p className="text-sm font-semibold text-ink-900">{hoverLab.lab.name}</p>
+          <p className="mt-0.5 text-[11px] uppercase tracking-wide text-ink-500">
+            Frontier lab · HQ: {hoverLab.lab.hqCountryName}
+          </p>
+          {hoverLab.lab.safetyFramework && (
+            <p className="mt-1 text-xs text-ink-700">
+              Safety framework: <span className="font-semibold">{hoverLab.lab.safetyFramework.name}</span>
+            </p>
+          )}
+          <p className="mt-1 text-[11px] text-ink-500">
+            Power {hoverLab.lab.powerScore}/5
+            {hoverLab.lab.isFMFMember && " · FMF member"}
+          </p>
+        </div>
+      )}
+
+      {walkthroughStep !== null && (
+        <WalkthroughOverlay
+          stepIndex={walkthroughStep}
+          onStepChange={setWalkthroughStep}
+          onApplyStep={handleWalkthroughApply}
+          onClose={() => setWalkthroughStep(null)}
+        />
+      )}
+
+      {/* Suppress unused warnings */}
+      <div className="hidden">{LAB_BY_ID.openai?.name}</div>
     </div>
   );
 }
