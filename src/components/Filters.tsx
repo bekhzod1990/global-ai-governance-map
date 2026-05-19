@@ -73,7 +73,7 @@ const REGION_OPTIONS: Region[] = [
   "Eurasia",
 ];
 
-function useOutsideClose(ref: React.RefObject<HTMLDivElement>, onClose: () => void) {
+function useOutsideClose(ref: React.RefObject<HTMLDivElement | null>, onClose: () => void) {
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) onClose();
