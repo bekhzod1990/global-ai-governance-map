@@ -12,6 +12,8 @@
   <img alt="Vite"    src="https://img.shields.io/badge/Vite-8.0-646CFF?style=flat-square&logo=vite" />
   <img alt="Tailwind" src="https://img.shields.io/badge/Tailwind-4.3-38BDF8?style=flat-square&logo=tailwindcss" />
   <img alt="Vitest"  src="https://img.shields.io/badge/Vitest-4.1-6E9F18?style=flat-square&logo=vitest" />
+  <img alt="Playwright" src="https://img.shields.io/badge/Playwright-1.60-2EAD33?style=flat-square&logo=playwright" />
+  <img alt="ESLint" src="https://img.shields.io/badge/ESLint-10-4B32C3?style=flat-square&logo=eslint" />
   <img alt="License" src="https://img.shields.io/badge/license-MIT-555?style=flat-square" />
   <img alt="Snapshot" src="https://img.shields.io/badge/dataset_snapshot-19_May_2026-B45309?style=flat-square" />
 </p>
@@ -142,7 +144,8 @@ There is **no backend, no API, no database, no auth**. The entire dataset is shi
 |---|---|---|
 | Framework | **React 19** | Concurrent rendering, automatic ref forwarding, `Suspense` for lazy lenses, `use` hook for future async data |
 | Language | **TypeScript 6 (strict)** | Strict null checks; data-shape errors surface at build time before they hit production |
-| Build | **Vite 8** + **`@vitejs/plugin-react-swc`** | SWC over Babel: cold builds in <1 s, instant HMR |
+| Build | **Vite 8** + **`@vitejs/plugin-react`** | Standard React plugin (kept on Babel for full ESLint plugin compatibility) |
+| Linting | **ESLint 10** + `eslint-plugin-react-hooks` + `eslint-plugin-jsx-a11y` | Catches hook-rule violations and a11y mistakes before runtime |
 | Bundler split | Rolldown via Vite | Manual vendor chunks (`react`, `d3`, `map`) so repeat-visit cache hits redownload only the 46 kB app chunk |
 | Styling | **Tailwind CSS v4** (via `@tailwindcss/vite`) | CSS-first theme tokens in `src/index.css`; Lightning CSS for prefixes; ~84 % faster builds than v3 |
 | Map | **react-simple-maps** + **d3-geo** | Equal Earth projection, declarative `<Geographies>`/`<Geography>` |
@@ -153,6 +156,14 @@ There is **no backend, no API, no database, no auth**. The entire dataset is shi
 | Telemetry | **`@vercel/speed-insights`** | Real-user Core Web Vitals in the Vercel dashboard |
 
 State management: a single `useReducer` for filter state + plain `useState` for selection/hover/lens. No Redux, Zustand, Jotai. The dataset is small enough that all memoisation lives in pure functions (`Map`-cached) rather than React Context.
+
+### Accessibility
+
+- All side panels and the walkthrough overlay are real `role="dialog"` + `aria-modal="true"` containers, with focus trapped inside while open and Escape to dismiss (`src/utils/useDialogFocus.ts`).
+- Every interactive element has a visible `focus-visible` ring (`ring-2 ring-accent`).
+- `prefers-reduced-motion` collapses all animations to near-zero duration.
+- Per-item **source verification status** is rendered next to every regulation, instrument, lab, and infrastructure node via `<VerificationMeta>` — readers see at a glance whether a claim is `verified`, `likely_correct`, or `uncertain` and which kind of source it was checked against.
+- Status badges (`signed` / `ratified` / `applicable_via_eu` / …) carry full descriptions in `title` + `aria-label`.
 
 ## Backend / API
 
@@ -216,6 +227,7 @@ See [`docs/DATA_GOVERNANCE.md`](docs/DATA_GOVERNANCE.md) for the dataset taxonom
 │   │   ├── WalkthroughOverlay.tsx     5-step guided tour
 │   │   ├── DataActions.tsx            CSV / JSON dataset export
 │   │   ├── SearchBox.tsx              fuzzy across countries / acts / instruments
+│   │   ├── VerificationMeta.tsx       per-item source verification chip (verified / likely / uncertain)
 │   │   ├── Legend / Tooltip / DataQualityNotice / EmptyState / SourceLink / ParticipationBadge / NationalRegulationList / InstrumentList / DeploymentBadge / LabPin
 │   ├── data/                          12 static data modules (see above)
 │   ├── utils/                         memoised selectors, validation, export, search
@@ -225,19 +237,30 @@ See [`docs/DATA_GOVERNANCE.md`](docs/DATA_GOVERNANCE.md) for the dataset taxonom
 │   │   ├── getEdgesForNode.ts                 grouped by relationship type
 │   │   ├── getMapColor.ts                     fill / outline / opacity per lens
 │   │   ├── getParticipationLabel.ts           label + description for badges
+│   │   ├── getVerificationLabel.ts            verificationMeta → human label + colour
 │   │   ├── governanceTaxonomy.ts              dataset classifications
 │   │   ├── normalizeCountry.ts                ISO numeric ↔ alpha-3 static table
 │   │   ├── searchData.ts                      fuzzy ranker
 │   │   ├── exportDataset.ts                   CSV / JSON build
+│   │   ├── datasetSchema.ts                   runtime dataset schema check
 │   │   ├── keyboardActivation.ts              a11y helper for clickable non-button elements
+│   │   ├── useDialogFocus.ts                  React hook: focus trap + Escape close
 │   │   ├── translateSeedDataToEnglish.ts      Cyrillic check + RU→EN map
 │   │   └── validateData.ts                    dev-mode validator + green/red summary line
 │   └── test/setup.ts
+├── tests/
+│   └── e2e/
+│       ├── smoke.spec.ts              Playwright: load + lens switch + side panel
+│       └── a11y.spec.ts               Playwright: keyboard nav + dialog focus + reduced-motion
+├── scripts/
+│   └── run-playwright.mjs             Playwright runner with sensible defaults
+├── playwright.config.ts               Playwright config
+├── eslint.config.js                   ESLint 10 flat config (react-hooks + jsx-a11y)
 ├── .github/
-│   ├── workflows/ci.yml               tsc + vitest + vite build on every push/PR
+│   ├── workflows/ci.yml               eslint + tsc + vitest + vite build on every push/PR
 │   └── dependabot.yml                 weekly npm minor bumps
 ├── vercel.json                        Vite preset locked
-├── vite.config.ts                     SWC plugin + manual vendor chunks + Vitest
+├── vite.config.ts                     React plugin + manual vendor chunks + Vitest (excludes tests/e2e)
 ├── tsconfig.{app,node}.json           strict TS project references
 ├── package.json                       no postcss / tailwind.config (Tailwind v4 CSS-first)
 └── README.md
@@ -261,9 +284,12 @@ Production build: ~0.6 s with SWC + Rolldown. Dev HMR: instant.
 
 ## Testing & CI
 
-- **Vitest 4** with `jsdom`. Run with `npm test` or `npm run test:watch`.
-- 30+ tests across `filterCountries`, `getCountryGovernanceSummary`, `governanceTaxonomy`, `exportDataset`, `keyboardActivation`, `validateData`.
-- **GitHub Actions** (`.github/workflows/ci.yml`) runs `tsc -b`, `vitest run`, and `vite build` on every push and PR.
+- **Unit / selector tests** — **Vitest 4** with `jsdom`. 30+ tests across `filterCountries`, `getCountryGovernanceSummary`, `governanceTaxonomy`, `exportDataset`, `keyboardActivation`, `datasetSchema`, `validateData`. Run with `npm test` or `npm run test:watch`.
+- **End-to-end + accessibility** — **Playwright 1.60** (`tests/e2e/smoke.spec.ts`, `tests/e2e/a11y.spec.ts`). Run with `npm run test:e2e` (full suite) or `npm run test:a11y` (a11y only). The a11y suite covers keyboard navigation, dialog focus traps, and `prefers-reduced-motion` honouring.
+- **Linting** — **ESLint 10** with `eslint-plugin-react-hooks` and `eslint-plugin-jsx-a11y`. Run with `npm run lint`.
+- **Type checking** — `npm run typecheck` runs `tsc -b --noEmit` against strict TypeScript.
+- **Dataset checks** — `npm run validate:data` and `npm run validate:export` run the relevant vitest files in isolation, for quick pre-commit dataset sanity checks.
+- **GitHub Actions** (`.github/workflows/ci.yml`) runs ESLint, `tsc -b`, `vitest run`, and `vite build` on every push and PR.
 - **Dependabot** (`.github/dependabot.yml`) opens a PR each week for npm minor/patch updates.
 - A dev-mode runtime validator (`validateData.ts`) prints a green-bold summary line if the dataset is clean: `✅ Data OK · 192 countries · 33 instruments · 75 national regs · 13 labs · 85 edges · 1410 participation rows`.
 
@@ -276,14 +302,18 @@ npm install
 npm run dev      # http://localhost:5173
 ```
 
-To build:
+To build / test / lint:
 
 ```bash
-npm run typecheck   # tsc -b --noEmit
-npm test            # vitest run
-npm run lint        # currently equivalent to typecheck
-npm run build       # tsc -b && vite build  →  dist/
-npm run preview     # serves dist/
+npm run lint              # eslint .
+npm run typecheck         # tsc -b --noEmit
+npm test                  # vitest run (unit + selector tests)
+npm run validate:data     # vitest run on validateData + governanceTaxonomy only
+npm run validate:export   # vitest run on exportDataset + datasetSchema only
+npm run test:e2e          # Playwright smoke + a11y end-to-end
+npm run test:a11y         # Playwright a11y suite only
+npm run build             # tsc -b && vite build  →  dist/
+npm run preview           # serves dist/
 ```
 
 ## Deployment (Vercel)
@@ -424,13 +454,13 @@ npm run validate:data
 
 ## Roadmap
 
-- ESLint pass + per-component test coverage (currently typecheck + unit tests for selectors).
 - Editorial CMS backing `src/data/*` for non-engineer contributors.
 - Build-time fetch from OECD.AI Observatory + CoE Treaty Office for live participation deltas.
 - Wider mobile breakpoints (current focus is desktop / tablet ≥ 768 px).
 - Sectoral lens (military AI / lethal autonomous weapons, healthcare AI, financial AI).
 - Civil-society / academia layer (CAIDP, AlgorithmWatch, AI Now, Future Society).
 - Per-country share-link URLs (`?country=KAZ&lens=network`).
+- Expand Playwright coverage to full visual regression + cross-browser matrix.
 
 ## License & credits
 
