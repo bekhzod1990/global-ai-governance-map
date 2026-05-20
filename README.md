@@ -132,7 +132,7 @@ Out-of-scope items (GDPR, DPDP, generic cybersecurity, BIS/Wassenaar/JP-NL-US ex
                          │
               ┌────────────────────────┐
               │   GitHub repository    │  CI: tsc -b · vitest · vite build
-              │  bekhzod1990/…         │  Dependabot: weekly minor bumps
+              │  Bekhzod-Alikhanov/…   │  Dependabot: weekly minor bumps
               └────────────────────────┘
 ```
 

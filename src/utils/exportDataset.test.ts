@@ -31,7 +31,7 @@ describe("dataset export helpers", () => {
     const citation = buildCitationText();
 
     expect(citation).toContain(DATA_SNAPSHOT_DATE);
-    expect(citation).toContain("https://github.com/bekhzod1990/global-ai-governance-map");
+    expect(citation).toContain("https://github.com/Bekhzod-Alikhanov/global-ai-governance-map");
     expect(citation).toContain("not legal advice");
   });
 

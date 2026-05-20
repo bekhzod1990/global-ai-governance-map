@@ -70,7 +70,7 @@ export function DataActions() {
             Download citation
           </button>
           <a
-            href="https://github.com/bekhzod1990/global-ai-governance-map/blob/main/docs/SOURCE_VERIFICATION_2026-05-20.md"
+            href="https://github.com/Bekhzod-Alikhanov/global-ai-governance-map/blob/main/docs/SOURCE_VERIFICATION_2026-05-20.md"
             target="_blank"
             rel="noopener noreferrer"
             className="block rounded-md px-2.5 py-2 font-medium text-ink-800 hover:bg-canvas"

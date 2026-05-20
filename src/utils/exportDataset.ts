@@ -60,7 +60,7 @@ export function buildCitationText(): string {
     `Global AI Governance Map dataset, snapshot ${DATA_SNAPSHOT_DATE}.`,
     "Coverage: frontier-AI governance actors, instruments, national AI-specific rules, participation rows, labs, infrastructure, and dependency links.",
     "Use with source verification. This dataset is a research aid and is not legal advice.",
-    "Repository: https://github.com/bekhzod1990/global-ai-governance-map",
+    "Repository: https://github.com/Bekhzod-Alikhanov/global-ai-governance-map",
     "Live app: https://global-ai-governance-map.vercel.app/",
   ].join("\n");
 }
