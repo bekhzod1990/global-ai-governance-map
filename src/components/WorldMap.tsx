@@ -11,6 +11,7 @@ import { filterCountries } from "../utils/filterCountries";
 import { getMapStyle } from "../utils/getMapColor";
 import { FRONTIER_LABS } from "../data/frontierLabs";
 import { LabPin } from "./LabPin";
+import { activateOnKeyboard } from "../utils/keyboardActivation";
 // Bundle the world topojson locally — eliminates the unpkg round-trip and
 // removes a known cause of first-paint stall when the CDN is slow/offline.
 import worldTopo from "world-atlas/countries-110m.json";
@@ -131,6 +132,7 @@ export function WorldMap({
                   key={geo.rsmKey}
                   geography={geo}
                   onClick={() => onSelectCountry(iso3)}
+                  onKeyDown={(event) => activateOnKeyboard(event, () => onSelectCountry(iso3))}
                   onMouseEnter={(e) => {
                     onHover({
                       iso3,
@@ -148,8 +150,9 @@ export function WorldMap({
                     });
                   }}
                   onMouseLeave={() => onHover(null)}
+                  role="button"
                   tabIndex={0}
-                  aria-label={`${COUNTRY_BY_ISO3[iso3].name} — click for details`}
+                  aria-label={`${COUNTRY_BY_ISO3[iso3].name} - open country details`}
                   style={{
                     default: {
                       fill: style.fill,

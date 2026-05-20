@@ -7,12 +7,13 @@ import { CountrySidePanel } from "./components/CountrySidePanel";
 import { LabSidePanel } from "./components/LabSidePanel";
 import { CountryTooltip } from "./components/CountryTooltip";
 import { DataQualityNotice } from "./components/DataQualityNotice";
+import { DataActions } from "./components/DataActions";
 import { SearchBox } from "./components/SearchBox";
 import { Legend } from "./components/Legend";
 import { LensSwitch } from "./components/LensSwitch";
 import { WalkthroughOverlay } from "./components/WalkthroughOverlay";
 import { runDevValidation } from "./utils/validateData";
-import { COUNTRIES } from "./data/countries";
+import { COUNTRIES, COUNTRY_BY_ISO3 } from "./data/countries";
 import { INTERNATIONAL_INSTRUMENTS } from "./data/internationalInstruments";
 import { NATIONAL_AI_REGULATIONS } from "./data/nationalAIRegulations";
 import { FRONTIER_LABS, LAB_BY_ID } from "./data/frontierLabs";
@@ -89,6 +90,11 @@ export default function App() {
   );
 
   const showsMap = lens === "geography" || lens === "layer";
+  const selectionAnnouncement = selectedIso3
+    ? `Selected country ${COUNTRY_BY_ISO3[selectedIso3]?.name ?? selectedIso3}`
+    : selectedLabId
+      ? `Selected lab ${LAB_BY_ID[selectedLabId]?.name ?? selectedLabId}`
+      : `${lens} view active`;
 
   function handleSelectCountry(iso3: string) {
     setSelectedLabId(null);
@@ -113,7 +119,7 @@ export default function App() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-canvas">
-      <header className="z-20 flex shrink-0 items-center gap-4 border-b border-canvas-line bg-canvas-surface px-5 py-2.5">
+      <header className="z-20 flex shrink-0 flex-wrap items-center gap-3 border-b border-canvas-line bg-canvas-surface px-5 py-2.5">
         <div className="min-w-0">
           <h1 className="text-base font-semibold leading-tight tracking-tight text-ink-900">
             Global AI Governance Map
@@ -123,7 +129,7 @@ export default function App() {
           </p>
         </div>
 
-        <div className="ml-auto flex flex-1 items-center justify-end gap-3">
+        <div className="ml-auto flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 sm:gap-3">
           <div className="hidden text-right text-[11px] leading-tight text-ink-500 xl:block">
             <div>
               {stats.countries} countries · {stats.labs} labs · {stats.instruments} instruments
@@ -133,6 +139,7 @@ export default function App() {
             </div>
           </div>
           <LensSwitch value={lens} onChange={setLens} />
+          <DataActions />
           <button
             type="button"
             onClick={() => setWalkthroughStep(0)}
@@ -140,7 +147,7 @@ export default function App() {
           >
             Take the tour
           </button>
-          <div className="w-full max-w-xs">
+          <div className="w-full min-w-52 max-w-xs sm:w-64">
             <SearchBox
               onSelectCountry={(iso3) => handleSelectCountry(iso3)}
               onSelectInstrument={(id) => dispatch({ type: "select-instrument", id })}
@@ -148,6 +155,10 @@ export default function App() {
           </div>
         </div>
       </header>
+
+      <div className="sr-only" aria-live="polite">
+        {selectionAnnouncement}
+      </div>
 
       <DataQualityNotice />
 
@@ -216,7 +227,7 @@ export default function App() {
           </div>
         )}
 
-        {selectedIso3 && showsMap && (
+        {selectedIso3 && (
           <CountrySidePanel
             iso3={selectedIso3}
             onClose={() => setSelectedIso3(null)}
@@ -269,9 +280,6 @@ export default function App() {
           onClose={() => setWalkthroughStep(null)}
         />
       )}
-
-      {/* Suppress unused warnings */}
-      <div className="hidden">{LAB_BY_ID.openai?.name}</div>
 
       <SpeedInsights />
     </div>

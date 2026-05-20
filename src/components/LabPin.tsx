@@ -1,6 +1,7 @@
 import { Marker } from "react-simple-maps";
 import clsx from "clsx";
 import type { FrontierLab } from "../types";
+import { activateOnKeyboard } from "../utils/keyboardActivation";
 
 // HQ city coordinates [longitude, latitude] for each frontier lab.
 // US lab cluster gets per-lab city coords; multi-lab cities are jittered slightly.
@@ -40,9 +41,13 @@ export function LabPin({ lab, selected, dimmed, onClick, onHover }: Props) {
       <g
         style={{ cursor: "pointer", opacity: dimmed ? 0.35 : 1, transition: "opacity 120ms" }}
         onClick={() => onClick(lab.id)}
+        onKeyDown={(event) => activateOnKeyboard(event, () => onClick(lab.id))}
         onMouseEnter={(e) => onHover?.(lab, e)}
         onMouseMove={(e) => onHover?.(lab, e)}
         onMouseLeave={() => onHover?.(null)}
+        role="button"
+        tabIndex={0}
+        aria-label={`${lab.name} headquarters in ${lab.hqCountryName} - open lab details`}
       >
         <circle
           r={r + 3}

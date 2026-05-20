@@ -17,6 +17,7 @@ import { INTERNATIONAL_INSTRUMENTS } from "../data/internationalInstruments";
 import { NATIONAL_AI_REGULATIONS } from "../data/nationalAIRegulations";
 import { DEPENDENCY_EDGES } from "../data/dependencies";
 import type { GraphNodeType } from "../types";
+import { activateOnKeyboard } from "../utils/keyboardActivation";
 
 type NodeKind = GraphNodeType;
 
@@ -43,6 +44,8 @@ const KIND_COLOR: Record<NodeKind, string> = {
   infrastructure: "#0F172A",
 };
 
+const NODE_LIST_LIMIT = 80;
+
 interface Props {
   selectedNodeId: string | null;
   onSelectNode: (id: string, kind: NodeKind) => void;
@@ -51,6 +54,8 @@ interface Props {
 export function NetworkView({ selectedNodeId, onSelectNode }: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState({ w: 1200, h: 700 });
+  const [showNodeList, setShowNodeList] = useState(false);
+  const [nodeQuery, setNodeQuery] = useState("");
 
   useEffect(() => {
     const el = wrapperRef.current;
@@ -160,9 +165,36 @@ export function NetworkView({ selectedNodeId, onSelectNode }: Props) {
     return set;
   }, [selectedNodeId, layout.links]);
 
+  const filteredNodeList = useMemo(() => {
+    const query = nodeQuery.trim().toLowerCase();
+    return nodes
+      .filter((node) => {
+        if (!query) return true;
+        return (
+          node.label.toLowerCase().includes(query) ||
+          node.id.toLowerCase().includes(query) ||
+          formatNodeKind(node.kind).includes(query)
+        );
+      })
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [nodes, nodeQuery]);
+
+  const visibleNodeList = filteredNodeList.slice(0, NODE_LIST_LIMIT);
+
   return (
     <div ref={wrapperRef} className="relative h-full w-full overflow-hidden bg-canvas-surface">
-      <svg width={dims.w} height={dims.h} className="h-full w-full">
+      <svg
+        width={dims.w}
+        height={dims.h}
+        className="h-full w-full"
+        role="img"
+        aria-label="Dependency network of countries, frontier labs, AI governance instruments, national rules, and infrastructure nodes"
+      >
+        <title>AI governance dependency network</title>
+        <desc>
+          Interactive graph of country, lab, instrument, national rule, and infrastructure nodes.
+          Use the node list to select entries without relying on the visual graph.
+        </desc>
         <defs>
           <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="#94A3B8" />
@@ -203,6 +235,10 @@ export function NetworkView({ selectedNodeId, onSelectNode }: Props) {
                 transform={`translate(${n.x ?? 0}, ${n.y ?? 0})`}
                 style={{ cursor: "pointer", opacity }}
                 onClick={() => onSelectNode(n.id, n.kind)}
+                onKeyDown={(event) => activateOnKeyboard(event, () => onSelectNode(n.id, n.kind))}
+                role="button"
+                tabIndex={0}
+                aria-label={`${n.label}, ${formatNodeKind(n.kind)} node - ${getNodeActionLabel(n.kind)}`}
               >
                 <circle
                   r={n.size}
@@ -228,6 +264,67 @@ export function NetworkView({ selectedNodeId, onSelectNode }: Props) {
         </g>
       </svg>
 
+      {/* Accessible node list */}
+      <div className="absolute right-4 top-4 z-10 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-canvas-line bg-white/90 p-3 text-xs shadow-panel backdrop-blur">
+        <button
+          type="button"
+          onClick={() => setShowNodeList((open) => !open)}
+          className="flex w-full items-center justify-between gap-3 rounded-md border border-canvas-line bg-white px-2.5 py-1.5 text-left text-xs font-semibold text-ink-800 hover:bg-canvas"
+          aria-expanded={showNodeList}
+          aria-controls="network-node-list"
+        >
+          <span>Node list</span>
+          <span aria-hidden="true">{showNodeList ? "Close" : "Open"}</span>
+        </button>
+
+        {showNodeList && (
+          <div id="network-node-list" className="mt-3 space-y-2">
+            <label className="block text-[10px] font-semibold uppercase tracking-wide text-ink-500">
+              Find node
+              <input
+                type="search"
+                value={nodeQuery}
+                onChange={(event) => setNodeQuery(event.target.value)}
+                className="mt-1 block w-full rounded-md border border-canvas-line bg-white px-2 py-1.5 text-xs font-normal normal-case tracking-normal text-ink-800 outline-none placeholder:text-ink-400 focus:border-accent"
+                placeholder="Country, lab, instrument..."
+              />
+            </label>
+            <div className="policy-scroll max-h-72 space-y-1 overflow-y-auto pr-1" role="list">
+              {visibleNodeList.map((node) => {
+                const selected = selectedNodeId === node.id;
+                return (
+                  <div key={node.id} role="listitem">
+                    <button
+                      type="button"
+                      onClick={() => onSelectNode(node.id, node.kind)}
+                      className={`flex w-full items-center justify-between gap-3 rounded-md px-2 py-1.5 text-left transition-colors ${
+                        selected
+                          ? "bg-accent text-white"
+                          : "text-ink-700 hover:bg-canvas"
+                      }`}
+                      aria-label={`${node.label}, ${formatNodeKind(node.kind)} node - ${getNodeActionLabel(node.kind)}`}
+                    >
+                      <span className="min-w-0 truncate font-medium">{node.label}</span>
+                      <span className={selected ? "shrink-0 text-[10px] text-white/80" : "shrink-0 text-[10px] text-ink-500"}>
+                        {formatNodeKind(node.kind)}
+                      </span>
+                    </button>
+                  </div>
+                );
+              })}
+              {filteredNodeList.length > NODE_LIST_LIMIT && (
+                <p className="px-2 py-1 text-[10px] text-ink-500">
+                  Showing {NODE_LIST_LIMIT} of {filteredNodeList.length}. Refine the search to narrow results.
+                </p>
+              )}
+              {filteredNodeList.length === 0 && (
+                <p className="px-2 py-1 text-[10px] text-ink-500">No matching nodes.</p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Legend */}
       <div className="absolute left-4 top-4 rounded-xl border border-canvas-line bg-white/90 p-3 text-xs shadow-panel backdrop-blur">
         <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500">
@@ -251,4 +348,14 @@ export function NetworkView({ selectedNodeId, onSelectNode }: Props) {
       </div>
     </div>
   );
+}
+
+function formatNodeKind(kind: NodeKind): string {
+  return kind.replace(/_/g, " ");
+}
+
+function getNodeActionLabel(kind: NodeKind): string {
+  if (kind === "country") return "open country details";
+  if (kind === "lab") return "open lab details";
+  return "highlight related nodes";
 }

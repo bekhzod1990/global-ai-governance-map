@@ -12,6 +12,7 @@ An interactive policy-research dashboard. Maps **frontier-AI governance** throug
 A **"Take the tour"** button runs a guided 5-step walkthrough (① Who builds frontier AI? → ② Who can actually stop them? → ③ International coordinators → ④ Evaluations & standards → ⑤ Compute & chips).
 
 The app is English-only, runs entirely client-side, and ships with a Vercel-ready build.
+The header **Data** menu exports the static dataset as JSON, downloads a citation note, and links to the current source-verification notes.
 
 ## What it shows
 
@@ -68,7 +69,7 @@ npm run preview
 2. Open <https://vercel.com/new>.
 3. Import the repository.
 4. Vercel auto-detects the **Vite** framework preset. Confirm:
-   - Install command: `npm install`
+   - Install command: `npm ci`
    - Build command: `npm run build`
    - Output directory: `dist`
 5. Deploy.

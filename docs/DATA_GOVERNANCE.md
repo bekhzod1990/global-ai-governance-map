@@ -20,6 +20,13 @@ New or revised records should include:
 
 These fields are optional during migration, but `npm run validate:data` reports aggregate warnings when records do not include them.
 
+## Public Dataset Export
+
+- The in-app Data menu exports the exact static arrays bundled into the client build.
+- The export uses schema version `2026.05` and the project snapshot date, not the browser download date.
+- Keep the export helper in `src/utils/exportDataset.ts` aligned with any new data file so public JSON exports do not silently omit a dataset category.
+- The citation download is intentionally short; long methodology and verification notes belong in this document and `docs/SOURCE_VERIFICATION_2026-05-20.md`.
+
 ## Taxonomy Rules
 
 National entries:
@@ -53,4 +60,3 @@ Before adding or changing a high-impact record:
 3. Add a note when participation is indirect, partial, conditional, or uncertain.
 4. Do not classify privacy, cybersecurity, export-control, semiconductor, or generic digital-policy instruments as AI-specific unless the source is explicitly AI-specific.
 5. Run `npm run validate:data`, `npm test`, and `npm run build`.
-
