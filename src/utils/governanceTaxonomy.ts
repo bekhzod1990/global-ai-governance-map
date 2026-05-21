@@ -96,6 +96,7 @@ const OFFICIAL_HOSTS = new Set([
   "www.gov.uk",
   "www.nist.gov",
   "www.iso.org",
+  "www.cencenelec.eu",
   "www.coe.int",
   "www.congress.gov",
   "www.gazzettaufficiale.it",

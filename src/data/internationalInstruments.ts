@@ -151,6 +151,30 @@ export const INTERNATIONAL_INSTRUMENTS: InternationalInstrument[] = [
       "OECD source confirms the G20 AI Principles drew from the OECD Recommendation; original G20 host should be checked in a later pass.",
     powerScore: 4,
   },
+  {
+    id: "gpai-declarations",
+    name: "Global Partnership on Artificial Intelligence declarations and ministerial statements",
+    issuer: "GPAI Council / OECD",
+    organizationType: "OECD",
+    date: "2022-11-01",
+    instrumentType: "ministerial_statement",
+    bindingStatus: "voluntary",
+    aiSpecific: true,
+    frontierAIRelevant: false,
+    summary:
+      "Series of GPAI Council outcome documents giving ministerial-level direction to the Global Partnership on Artificial Intelligence work programme. Included as AI policy coordination context, not as a treaty or binding legal instrument.",
+    sourceName: "OECD.AI - GPAI Council documents",
+    sourceUrl: "https://oecd.ai/en/gpai-declarations",
+    sourceKind: "official",
+    verificationStatus: "likely_correct",
+    confidence: "medium",
+    lastVerified: "2026-05-21",
+    verificationNotes:
+      "Official OECD.AI page lists GPAI Council outcome documents from November 2022, December 2023, July 2024, December 2024, and February 2026. Date is normalized to the first listed month for timeline placement.",
+    notes:
+      "No country participation rows are included until a canonical current member/signatory roster is verified from official GPAI/OECD sources.",
+    powerScore: 3,
+  },
 
   // G7 Hiroshima
   {
@@ -264,6 +288,31 @@ export const INTERNATIONAL_INSTRUMENTS: InternationalInstrument[] = [
     verificationNotes:
       "Council of Europe Treaty Office/news confirms EU ratification on 2026-05-15. Treaty Office summaries confirm entry into force requires five ratifications including at least three Council of Europe member states.",
     powerScore: 5,
+  },
+  {
+    id: "cen-cenelec-ai-act-standards",
+    name: "CEN-CENELEC AI Act harmonized-standardization work",
+    issuer: "CEN-CENELEC Joint Technical Committee 21",
+    organizationType: "EU",
+    date: "2021-06-01",
+    instrumentType: "roadmap",
+    bindingStatus: "standard",
+    aiSpecific: true,
+    frontierAIRelevant: true,
+    summary:
+      "European standardization workstream developing harmonized standards in support of the EU AI Act, including risk management, quality management, conformity assessment, transparency, human oversight, cybersecurity, and related operational topics.",
+    sourceName: "CEN-CENELEC - Artificial Intelligence",
+    sourceUrl:
+      "https://www.cencenelec.eu/areas-of-work/cen-cenelec-topics/artificial-intelligence/",
+    sourceKind: "official",
+    verificationStatus: "likely_correct",
+    confidence: "medium",
+    lastVerified: "2026-05-21",
+    verificationNotes:
+      "Official CEN-CENELEC page states that JTC 21 was established on 2021-06-01 and develops European AI standards, including harmonized standards supporting the EU AI Act.",
+    notes:
+      "Standardization infrastructure, not a standalone binding law. Harmonized standards may support legal presumption of conformity once published in the Official Journal of the EU.",
+    powerScore: 4,
   },
   {
     id: "council-eu-ai-conclusions-2024",
@@ -463,6 +512,31 @@ export const INTERNATIONAL_INSTRUMENTS: InternationalInstrument[] = [
     powerScore: 4,
   },
   {
+    id: "seoul-frontier-ai-safety-commitments",
+    name: "Frontier AI Safety Commitments (AI Seoul Summit 2024)",
+    issuer: "UK and Republic of Korea governments / participating frontier AI companies",
+    organizationType: "AI Safety Summit",
+    date: "2024-05-21",
+    instrumentType: "summit_statement",
+    bindingStatus: "voluntary",
+    aiSpecific: true,
+    frontierAIRelevant: true,
+    summary:
+      "Voluntary company commitments announced in the AI Seoul Summit process. Participating organizations undertake to manage severe frontier-AI risks, publish safety frameworks, use risk thresholds, explain mitigations, and provide transparency where possible.",
+    sourceName: "GOV.UK - Frontier AI Safety Commitments",
+    sourceUrl:
+      "https://www.gov.uk/government/publications/frontier-ai-safety-commitments-ai-seoul-summit-2024/frontier-ai-safety-commitments-ai-seoul-summit-2024",
+    sourceKind: "official",
+    verificationStatus: "verified",
+    confidence: "high",
+    lastVerified: "2026-05-21",
+    verificationNotes:
+      "Official GOV.UK page lists participating companies and describes the commitments as voluntary. The app links only companies already represented as frontier labs.",
+    notes:
+      "Non-state company commitments, not an intergovernmental treaty, national law, or state sign-on. No country participation rows are included.",
+    powerScore: 4,
+  },
+  {
     id: "paris-statement-2025",
     name: "Statement on Inclusive and Sustainable AI for People and the Planet",
     issuer: "AI Action Summit (Paris)",
@@ -629,6 +703,32 @@ export const INTERNATIONAL_INSTRUMENTS: InternationalInstrument[] = [
     sourceUrl:
       "https://www.gov.uk/government/publications/memorandum-of-understanding-between-the-government-of-the-united-states-of-america-and-the-government-of-the-united-kingdom-of-great-britain-and-northern",
     ...OFFICIAL_LIKELY,
+    powerScore: 3,
+  },
+
+  {
+    id: "nist-genai-profile",
+    name: "NIST AI RMF Generative AI Profile",
+    issuer: "U.S. National Institute of Standards and Technology",
+    organizationType: "Other",
+    date: "2024-07-26",
+    instrumentType: "guidance",
+    bindingStatus: "voluntary",
+    aiSpecific: true,
+    frontierAIRelevant: true,
+    summary:
+      "Cross-sectoral companion profile to NIST AI RMF 1.0 for generative AI. Gives organizations voluntary guidance for identifying, measuring, managing, and governing generative-AI risks.",
+    sourceName: "NIST - AI RMF Generative AI Profile",
+    sourceUrl:
+      "https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence",
+    sourceKind: "official",
+    verificationStatus: "verified",
+    confidence: "high",
+    lastVerified: "2026-05-21",
+    verificationNotes:
+      "Official NIST publication page confirms publication on 2024-07-26, report number NIST AI 600-1, and voluntary AI RMF companion-profile scope.",
+    notes:
+      "U.S. technical guidance with international influence. It is not an international agreement and has no country participation rows.",
     powerScore: 3,
   },
 

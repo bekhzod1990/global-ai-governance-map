@@ -26,6 +26,18 @@ export const SOURCE_NOTES: SourceNote[] = [
       "ISO/IEC standards are voluntary international standards. There are no country signatures; participation is via the global standardization system.",
   },
   {
+    id: "operational-instruments-no-country-rows",
+    appliesTo: "seoul-frontier-ai-safety-commitments, gpai-declarations, nist-genai-profile",
+    note:
+      "Company commitments, GPAI Council outputs, and NIST technical guidance are shown as governance context. They do not create country-level signature, ratification, or binding-law rows in this dataset.",
+  },
+  {
+    id: "cen-cenelec-standardization-caveat",
+    appliesTo: "cen-cenelec-ai-act-standards",
+    note:
+      "CEN-CENELEC AI Act standards work is standardization infrastructure. It should not be read as a separate national AI law or explicit state endorsement.",
+  },
+  {
     id: "frontier-model-forum",
     appliesTo: "frontier-model-forum",
     note:

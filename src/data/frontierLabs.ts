@@ -27,7 +27,7 @@ export const FRONTIER_LABS: FrontierLab[] = [
       sourceUrl: "https://openai.com/index/updating-our-preparedness-framework/",
     },
     isFMFMember: true,
-    regulatoryExposureIds: ["eu-ai-act", "us-nist-ai-rmf", "us-caisi"],
+    regulatoryExposureIds: ["eu-ai-act", "us-nist-ai-rmf", "us-caisi", "seoul-frontier-ai-safety-commitments"],
     powerScore: 5,
     summary:
       "One of the most consequential frontier-model developers. Sets pre-deployment evaluation policy, capability thresholds, and rollout controls via the Preparedness Framework.",
@@ -48,7 +48,13 @@ export const FRONTIER_LABS: FrontierLab[] = [
       sourceUrl: "https://www.anthropic.com/news/anthropics-responsible-scaling-policy",
     },
     isFMFMember: true,
-    regulatoryExposureIds: ["eu-ai-act", "us-nist-ai-rmf", "us-caisi", "uk-ai-security-institute"],
+    regulatoryExposureIds: [
+      "eu-ai-act",
+      "us-nist-ai-rmf",
+      "us-caisi",
+      "uk-ai-security-institute",
+      "seoul-frontier-ai-safety-commitments",
+    ],
     powerScore: 5,
     summary:
       "Leading frontier model lab whose safety-policy work strongly shapes industry expectations. RSP ties capability thresholds to deployment commitments.",
@@ -69,7 +75,7 @@ export const FRONTIER_LABS: FrontierLab[] = [
       sourceUrl: "https://deepmind.google/discover/blog/introducing-the-frontier-safety-framework/",
     },
     isFMFMember: true,
-    regulatoryExposureIds: ["eu-ai-act", "us-nist-ai-rmf"],
+    regulatoryExposureIds: ["eu-ai-act", "us-nist-ai-rmf", "seoul-frontier-ai-safety-commitments"],
     powerScore: 5,
     summary:
       "Vertically integrated frontier developer combining model R&D, cloud (Google Cloud / TPUs), and search-scale deployment.",
@@ -90,7 +96,7 @@ export const FRONTIER_LABS: FrontierLab[] = [
       sourceUrl: "https://ai.meta.com/static-resource/Meta_Advanced-AI-Scaling-Framework-v2",
     },
     isFMFMember: true,
-    regulatoryExposureIds: ["eu-ai-act", "us-nist-ai-rmf"],
+    regulatoryExposureIds: ["eu-ai-act", "us-nist-ai-rmf", "seoul-frontier-ai-safety-commitments"],
     powerScore: 5,
     summary:
       "Top model developer whose open-weight Llama releases shape the global frontier ecosystem and policy debates on diffusion.",
@@ -111,7 +117,7 @@ export const FRONTIER_LABS: FrontierLab[] = [
       sourceUrl: "https://blogs.microsoft.com/on-the-issues/2024/05/01/responsible-ai-transparency-report/",
     },
     isFMFMember: true,
-    regulatoryExposureIds: ["eu-ai-act", "us-nist-ai-rmf"],
+    regulatoryExposureIds: ["eu-ai-act", "us-nist-ai-rmf", "seoul-frontier-ai-safety-commitments"],
     powerScore: 5,
     summary:
       "Major AI company and cloud gatekeeper (Azure). Combines own model family (Phi) with deep OpenAI partnership and platform reach.",
@@ -132,7 +138,7 @@ export const FRONTIER_LABS: FrontierLab[] = [
       sourceUrl: "https://www.aboutamazon.com/news/aws/amazon-nova-frontier-model-safety-framework",
     },
     isFMFMember: true,
-    regulatoryExposureIds: ["eu-ai-act", "us-nist-ai-rmf"],
+    regulatoryExposureIds: ["eu-ai-act", "us-nist-ai-rmf", "seoul-frontier-ai-safety-commitments"],
     powerScore: 5,
     summary:
       "Major AI company and infrastructure provider (AWS, custom Trainium / Inferentia chips). Hosts most non-Microsoft frontier inference.",
@@ -153,7 +159,7 @@ export const FRONTIER_LABS: FrontierLab[] = [
       sourceUrl: "https://x.ai/news/grok-3",
     },
     isFMFMember: false,
-    regulatoryExposureIds: ["eu-ai-act", "us-nist-ai-rmf"],
+    regulatoryExposureIds: ["eu-ai-act", "us-nist-ai-rmf", "seoul-frontier-ai-safety-commitments"],
     powerScore: 4,
     summary:
       "Fast-rising frontier developer behind the Grok line; large compute footprint via the Colossus supercluster.",
@@ -174,7 +180,12 @@ export const FRONTIER_LABS: FrontierLab[] = [
       sourceUrl: "https://mistral.ai/models",
     },
     isFMFMember: false,
-    regulatoryExposureIds: ["eu-ai-act", "it-law-132-2025", "fr-ai-for-humanity"],
+    regulatoryExposureIds: [
+      "eu-ai-act",
+      "it-law-132-2025",
+      "fr-ai-for-humanity",
+      "seoul-frontier-ai-safety-commitments",
+    ],
     powerScore: 4,
     summary:
       "Leading European frontier-model company. Strong open-weight and enterprise positioning; direct EU AI Act exposure.",
@@ -195,7 +206,12 @@ export const FRONTIER_LABS: FrontierLab[] = [
       sourceUrl: "https://cohere.com/security/frontier-model-framework",
     },
     isFMFMember: false,
-    regulatoryExposureIds: ["eu-ai-act", "ca-voluntary-code-genai", "ca-aisi"],
+    regulatoryExposureIds: [
+      "eu-ai-act",
+      "ca-voluntary-code-genai",
+      "ca-aisi",
+      "seoul-frontier-ai-safety-commitments",
+    ],
     powerScore: 3,
     summary:
       "Enterprise-oriented model company. Linked to the Seoul 2024 Frontier AI Safety Commitments via its security framework.",

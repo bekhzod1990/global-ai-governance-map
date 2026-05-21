@@ -52,6 +52,8 @@ const seeds: GraphEdge[] = [
     "The G20 AI Principles largely internationalised the OECD approach."),
   e("instrument", "oecd-ai-principles", "influences", "instrument", "g7-hiroshima-statement", 3,
     "The Hiroshima process builds on the broader trustworthy-AI norm ecosystem shaped by the OECD."),
+  e("instrument", "oecd-ai-principles", "influences", "instrument", "gpai-declarations", 3,
+    "GPAI Council documents sit within the OECD-aligned trustworthy-AI policy coordination ecosystem."),
 
   // CoE Convention influence
   e("instrument", "coe-ai-convention", "influences", "country", "EUU", 3,
@@ -100,6 +102,34 @@ for (const lab of FMF_MEMBERS) {
       "frontier-model-forum",
       3,
       `${lab.name} is a member of the Frontier Model Forum.`
+    )
+  );
+}
+
+// ===== Seoul Frontier AI Safety Commitments company signatories represented as labs =====
+const SEOUL_COMMITMENT_LAB_IDS = [
+  "amazon",
+  "anthropic",
+  "cohere",
+  "google-deepmind",
+  "meta",
+  "microsoft",
+  "mistral",
+  "openai",
+  "xai",
+];
+for (const labId of SEOUL_COMMITMENT_LAB_IDS) {
+  const lab = FRONTIER_LABS.find((item) => item.id === labId);
+  if (!lab) continue;
+  seeds.push(
+    e(
+      "lab",
+      lab.id,
+      "participates_in",
+      "instrument",
+      "seoul-frontier-ai-safety-commitments",
+      3,
+      `${lab.name} is listed on the official GOV.UK Frontier AI Safety Commitments page or represented through the listed parent company.`
     )
   );
 }
@@ -210,8 +240,18 @@ seeds.push(
     "ISO/IEC 42001 AI management systems shape the compliance environment around the EU AI Act."),
   e("instrument", "iso-iec-23894-2023", "influences", "national_rule", "eu-ai-act-regional", 3,
     "ISO/IEC 23894 AI risk-management guidance is used as a baseline alongside the EU AI Act."),
+  e("instrument", "cen-cenelec-ai-act-standards", "influences", "national_rule", "eu-ai-act-regional", 4,
+    "CEN-CENELEC harmonized-standardization work operationalizes conformity paths under the EU AI Act."),
+  e("instrument", "iso-iec-42001-2023", "influences", "instrument", "cen-cenelec-ai-act-standards", 3,
+    "CEN-CENELEC JTC 21 collaborates with ISO/IEC and adapts international AI standards where appropriate."),
+  e("instrument", "iso-iec-23894-2023", "influences", "instrument", "cen-cenelec-ai-act-standards", 3,
+    "International AI risk-management standards inform the European harmonized-standardization workstream."),
+  e("instrument", "iso-iec-42005-2025", "influences", "instrument", "cen-cenelec-ai-act-standards", 2,
+    "AI impact-assessment standards are part of the broader standards ecosystem relevant to AI Act implementation."),
   e("national_rule", "us-nist-ai-rmf", "influences", "country", "USA", 4,
-    "NIST AI RMF anchors the U.S. standards-based approach to AI risk management.")
+    "NIST AI RMF anchors the U.S. standards-based approach to AI risk management."),
+  e("instrument", "nist-genai-profile", "influences", "national_rule", "us-nist-ai-rmf", 4,
+    "The NIST Generative AI Profile is a companion resource to AI RMF 1.0 for generative-AI risk management.")
 );
 
 // Cleanup: dedupe by id

@@ -202,7 +202,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
   // United States
   {
     id: "us-nist-ai-rmf",
-    name: "NIST AI Risk Management Framework (AI RMF 1.0) and Generative AI Profile",
+    name: "NIST AI Risk Management Framework (AI RMF 1.0)",
     jurisdiction: "United States",
     countryIso3: "USA",
     type: "framework",
@@ -212,13 +212,13 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     dateAdopted: "2023-01-26",
     regulatorOrBody: "National Institute of Standards and Technology (NIST)",
     summary:
-      "Voluntary risk-management framework for AI, with a 2024 Generative AI Profile. Widely used inside and outside the U.S. as a baseline reference.",
+      "Voluntary risk-management framework for AI. Widely used inside and outside the U.S. as a baseline reference; the 2024 Generative AI Profile is tracked separately as an operational instrument.",
     frontierAIRelevant: true,
     sourceName: "NIST — AI Risk Management Framework",
     sourceUrl: "https://www.nist.gov/itl/ai-risk-management-framework",
     ...OFFICIAL_VERIFIED,
     verificationNotes:
-      "Official NIST page confirms AI RMF 1.0 publication on 2023-01-26 and generative AI profile context; framework is voluntary/non-binding.",
+      "Official NIST page confirms AI RMF 1.0 publication on 2023-01-26; framework is voluntary/non-binding. The Generative AI Profile is represented separately as nist-genai-profile.",
   },
   {
     id: "us-caisi",

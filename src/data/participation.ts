@@ -93,6 +93,19 @@ rows.push(
   ...makeRows("council-eu-ai-conclusions-2024", [EU], "member"),
 );
 
+// CEN-CENELEC AI Act standards work: European standardization infrastructure,
+// not country-by-country enactment or explicit state endorsement.
+rows.push(
+  ...makeRows("cen-cenelec-ai-act-standards", EU_MEMBER_ISO3, "covered_by_membership", {
+    notes:
+      "Coverage shown via EU/CEN-CENELEC standardization ecosystem. This is not national law or explicit country sign-on.",
+  }),
+  ...makeRows("cen-cenelec-ai-act-standards", [EU], "member", {
+    notes:
+      "EU-level standardization support for AI Act implementation; not a standalone binding regulation.",
+  }),
+);
+
 // Council of Europe Framework Convention on AI — signed (20), and EU ratified.
 rows.push(
   ...makeRows("coe-ai-convention", COE_CONVENTION_SIGNATORIES, "signed", {

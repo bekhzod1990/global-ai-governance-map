@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { INSTRUMENT_BY_ID } from "../data/internationalInstruments";
+import { LAB_BY_ID } from "../data/frontierLabs";
 import { NATIONAL_REG_BY_ID } from "../data/nationalAIRegulations";
 import { PARTICIPATION_BY_INSTRUMENT } from "../data/participation";
 import { SUBNATIONAL_BY_ID } from "../data/subnationalRules";
@@ -34,6 +35,7 @@ describe("governance taxonomy", () => {
     expect(assessSourceUrl("https://eur-lex.europa.eu/legal-content/EN/TXT/").sourceKind).toBe("official");
     expect(assessSourceUrl("https://asean.org/example").sourceKind).toBe("official");
     expect(assessSourceUrl("https://www.gov.ca.gov/example").sourceKind).toBe("official");
+    expect(assessSourceUrl("https://www.cencenelec.eu/example").sourceKind).toBe("official");
     expect(assessSourceUrl("https://developers.openai.com/api/docs/models/all").sourceKind).toBe("official");
     expect(assessSourceUrl("https://perma.cc/example").sourceKind).toBe("secondary");
     expect(assessSourceUrl("http://example.com").issues).toContain("source URL is not HTTPS");
@@ -58,5 +60,20 @@ describe("governance taxonomy", () => {
     expect(members.has("DEU")).toBe(true);
     expect(members.has("ITA")).toBe(true);
     expect(members.has("KEN")).toBe(false);
+  });
+
+  it("represents supplementary high and medium priority instruments conservatively", () => {
+    expect(INSTRUMENT_BY_ID["seoul-frontier-ai-safety-commitments"].bindingStatus).toBe("voluntary");
+    expect(INSTRUMENT_BY_ID["gpai-declarations"].bindingStatus).toBe("voluntary");
+    expect(INSTRUMENT_BY_ID["nist-genai-profile"].bindingStatus).toBe("voluntary");
+    expect(INSTRUMENT_BY_ID["cen-cenelec-ai-act-standards"].bindingStatus).toBe("standard");
+
+    expect(PARTICIPATION_BY_INSTRUMENT["seoul-frontier-ai-safety-commitments"] ?? []).toEqual([]);
+    expect(PARTICIPATION_BY_INSTRUMENT["gpai-declarations"] ?? []).toEqual([]);
+    expect(PARTICIPATION_BY_INSTRUMENT["nist-genai-profile"] ?? []).toEqual([]);
+    expect(PARTICIPATION_BY_INSTRUMENT["cen-cenelec-ai-act-standards"].some((row) => row.countryIso3 === "EUU")).toBe(true);
+
+    expect(LAB_BY_ID.openai.regulatoryExposureIds).toContain("seoul-frontier-ai-safety-commitments");
+    expect(LAB_BY_ID.deepseek.regulatoryExposureIds).not.toContain("seoul-frontier-ai-safety-commitments");
   });
 });

@@ -117,7 +117,7 @@ export function validateData(): ValidationReport {
     if (inst.instrumentType === "standard" && inst.bindingStatus !== "standard") {
       warnings.push(`Instrument ${inst.id} is a standard but bindingStatus is ${inst.bindingStatus}`);
     }
-    if (inst.bindingStatus === "standard" && inst.instrumentType !== "standard") {
+    if (inst.bindingStatus === "standard" && !["standard", "roadmap"].includes(inst.instrumentType)) {
       warnings.push(`Instrument ${inst.id} has standard bindingStatus but type is ${inst.instrumentType}`);
     }
   }
