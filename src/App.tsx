@@ -30,7 +30,7 @@ import { INTERNATIONAL_INSTRUMENTS } from "./data/internationalInstruments";
 import { NATIONAL_AI_REGULATIONS } from "./data/nationalAIRegulations";
 import { FRONTIER_LABS, LAB_BY_ID } from "./data/frontierLabs";
 import { DEPENDENCY_EDGES } from "./data/dependencies";
-import { countActiveFilters, filterCountries } from "./utils/filterCountries";
+import { getMapFitScope } from "./utils/mapFitTarget";
 
 // Network + Timeline lenses are non-default. Lazy-load them so d3-force
 // and the timeline list don't ship in the initial bundle.
@@ -199,10 +199,28 @@ export default function App() {
 
   const showsMap = lens === "geography" || lens === "layer";
   const mapChromeHidden = showsMap && isMapMaximized;
-  const resultFitTarget = useMemo(
-    () => getMapFitTarget(filters, selectedIso3, selectedLabId),
+  const resultFitScope = useMemo(
+    () => getMapFitScope(filters, selectedIso3, selectedLabId),
     [filters, selectedIso3, selectedLabId]
   );
+  const resultFitTarget = resultFitScope.target;
+  const mapScopeReadout = resultFitScope.isNoMatch
+    ? "No map matches"
+    : mapView.fitTarget
+      ? `Fitted: ${mapView.fitTarget.summaryLabel}`
+      : resultFitTarget
+        ? `Matches: ${resultFitTarget.summaryLabel}`
+        : "World overview";
+  const compactMapScopeReadout = resultFitScope.isNoMatch
+    ? "No matches"
+    : mapView.fitTarget
+      ? "Fitted"
+      : resultFitTarget
+        ? resultFitScope.compactLabel
+        : "World";
+  const mapScopeTitle = resultFitTarget
+    ? `${mapScopeReadout} (${resultFitTarget.label})`
+    : mapScopeReadout;
 
   useEffect(() => {
     if (!isMapMaximized) return;
@@ -225,7 +243,7 @@ export default function App() {
     setSelectedLabId(null);
     setSelectedIso3(iso3);
     setActivePresetId(null);
-    const target = getMapFitTarget(filters, iso3, null);
+    const target = getMapFitScope(filters, iso3, null).target;
     if (target) setMapView(createFitMapView(target));
   }
 
@@ -233,7 +251,7 @@ export default function App() {
     setSelectedIso3(null);
     setSelectedLabId(id);
     setActivePresetId(null);
-    const target = getMapFitTarget(filters, null, id);
+    const target = getMapFitScope(filters, null, id).target;
     if (target) setMapView(createFitMapView(target));
   }
 
@@ -261,7 +279,7 @@ export default function App() {
     setIsMapMaximized(false);
     setActivePresetId(null);
     if (nextLens === "geography" || nextLens === "layer") {
-      const target = getMapFitTarget(nextFilters, null, null);
+      const target = getMapFitScope(nextFilters, null, null).target;
       if (target) setMapView(createFitMapView(target));
     }
   }
@@ -280,13 +298,17 @@ export default function App() {
     setTimelineLane(preset.timelineLane ?? "all");
     setActivePresetId(preset.id);
     if (preset.lens === "geography" || preset.lens === "layer") {
-      const target = getMapFitTarget(nextFilters, nextSelectedIso3, nextSelectedLabId);
+      const target = getMapFitScope(nextFilters, nextSelectedIso3, nextSelectedLabId).target;
       if (target) setMapView(createFitMapView(target));
     }
   }
 
   function handleFilterChange(nextFilters: FilterState) {
     dispatch({ type: "set", filters: nextFilters });
+    if (mapView.fitTarget) {
+      const nextTarget = getMapFitScope(nextFilters, selectedIso3, selectedLabId).target;
+      setMapView(nextTarget ? createFitMapView(nextTarget) : DEFAULT_MAP_VIEW);
+    }
   }
 
   function handleFilterReset() {
@@ -302,7 +324,7 @@ export default function App() {
         : [...filters.selectedInstrumentIds, id],
     };
     dispatch({ type: "set", filters: nextFilters });
-    const target = getMapFitTarget(nextFilters, null, null);
+    const target = getMapFitScope(nextFilters, null, null).target;
     if (target) setMapView(createFitMapView(target));
   }
 
@@ -355,7 +377,7 @@ export default function App() {
           <div className="min-w-44 w-56 shrink-0 md:w-64 xl:w-72">
             <SearchBox
               query={filters.searchQuery}
-              onQueryChange={(query) => dispatch({ type: "set", filters: { ...filters, searchQuery: query } })}
+              onQueryChange={(query) => handleFilterChange({ ...filters, searchQuery: query })}
               onSelectCountry={(iso3) => handleSelectCountry(iso3)}
               onSelectInstrument={handleSelectInstrument}
             />
@@ -453,7 +475,7 @@ export default function App() {
         )}
 
         {showsMap && (
-          <div className="absolute left-2 top-2 z-20 flex max-w-[calc(100%-8.5rem)] items-center gap-1 rounded-lg border border-canvas-line bg-white/90 p-1 shadow-panel backdrop-blur sm:left-4 sm:top-3 sm:max-w-none">
+          <div className="absolute left-2 top-2 z-20 flex max-w-[calc(100%-8.5rem)] flex-wrap items-center gap-1 rounded-lg border border-canvas-line bg-white/90 p-1 shadow-panel backdrop-blur sm:left-4 sm:top-3 sm:max-w-none">
             <label htmlFor="map-focus-select" className="sr-only">
               Map focus
             </label>
@@ -462,7 +484,7 @@ export default function App() {
               aria-label="Map focus"
               value={mapView.fitTarget ? "results" : mapView.focusId}
               onChange={(event) => handleMapFocusChange(event.target.value)}
-              className="h-8 max-w-28 rounded-md border border-canvas-line bg-white px-2 text-xs font-medium text-ink-800 outline-none hover:border-ink-400 focus:border-accent focus:ring-2 focus:ring-accent/20 sm:max-w-40"
+              className="h-8 max-w-24 rounded-md border border-canvas-line bg-white px-2 text-xs font-medium text-ink-800 outline-none hover:border-ink-400 focus:border-accent focus:ring-2 focus:ring-accent/20 sm:max-w-40"
             >
               {mapView.focusId === "custom" && <option value="custom">Custom</option>}
               {mapView.fitTarget && <option value="results">Results</option>}
@@ -477,12 +499,30 @@ export default function App() {
                 type="button"
                 onClick={handleZoomToResults}
                 aria-label={`Zoom to results: ${resultFitTarget.label}`}
-                className="inline-flex h-8 items-center justify-center rounded-md border border-accent/30 bg-accent/10 px-2 text-[11px] font-semibold text-accent hover:bg-accent/15"
+                className="inline-flex h-8 items-center justify-center rounded-md border border-accent/30 bg-accent/10 px-1.5 text-[11px] font-semibold text-accent hover:bg-accent/15 sm:px-2"
               >
                 <span className="sm:hidden">Fit</span>
                 <span className="hidden sm:inline">Zoom to results</span>
               </button>
             )}
+            <span
+              role="status"
+              aria-live="polite"
+              aria-label={`Map scope: ${mapScopeReadout}`}
+              title={mapScopeTitle}
+              className={
+                resultFitScope.isNoMatch
+                  ? "order-last w-full truncate rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-900 sm:order-none sm:w-auto sm:max-w-48"
+                  : mapView.fitTarget
+                    ? "order-last w-full truncate rounded-md border border-accent/20 bg-accent/10 px-2 py-1 text-[10px] font-semibold text-accent sm:order-none sm:w-auto sm:max-w-48"
+                    : resultFitTarget
+                      ? "order-last w-full truncate rounded-md border border-canvas-line bg-canvas px-2 py-1 text-[10px] font-semibold text-ink-600 sm:order-none sm:w-auto sm:max-w-48"
+                      : "order-last w-full truncate rounded-md border border-canvas-line bg-white px-2 py-1 text-[10px] font-semibold text-ink-500 sm:order-none sm:w-auto sm:max-w-40"
+              }
+            >
+              <span className="hidden sm:inline">{mapScopeReadout}</span>
+              <span className="sm:hidden">{compactMapScopeReadout}</span>
+            </span>
             <button
               type="button"
               onClick={() => handleMapZoom(-MAP_ZOOM_STEP)}
@@ -508,9 +548,24 @@ export default function App() {
               type="button"
               onClick={handleMapReset}
               aria-label="Reset map view"
-              className="inline-flex h-8 items-center justify-center rounded-md border border-canvas-line bg-white px-2 text-[11px] font-semibold text-ink-700 hover:border-accent hover:text-accent"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-canvas-line bg-white text-[11px] font-semibold text-ink-700 hover:border-accent hover:text-accent sm:w-auto sm:px-2"
             >
-              Reset
+              <svg
+                aria-hidden="true"
+                className="sm:hidden"
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M3 12a9 9 0 1 0 3-6.7" />
+                <path d="M3 4v6h6" />
+              </svg>
+              <span className="hidden sm:inline">Reset</span>
             </button>
           </div>
         )}
@@ -653,100 +708,4 @@ function createFitMapView(target: MapFitTarget): MapViewState {
     zoom: 1,
     fitTarget: target,
   };
-}
-
-function getMapFitTarget(
-  filters: FilterState,
-  selectedIso3: string | null,
-  selectedLabId: string | null
-): MapFitTarget | null {
-  if (selectedLabId && LAB_BY_ID[selectedLabId]) {
-    const lab = LAB_BY_ID[selectedLabId];
-    return {
-      id: `lab:${selectedLabId}`,
-      label: lab.name,
-      countryIso3s: [lab.hqIso3],
-      labIds: [selectedLabId],
-    };
-  }
-
-  if (selectedIso3 && selectedIso3 !== "EUU" && COUNTRY_BY_ISO3[selectedIso3]) {
-    return {
-      id: `country:${selectedIso3}`,
-      label: COUNTRY_BY_ISO3[selectedIso3].name,
-      countryIso3s: [selectedIso3],
-      labIds: [],
-    };
-  }
-
-  if (selectedIso3 === "EUU") {
-    const euMemberIso3s = COUNTRIES
-      .filter((country) => country.isEUMember)
-      .map((country) => country.iso3);
-    return {
-      id: "country:EUU",
-      label: "EU member states",
-      countryIso3s: euMemberIso3s,
-      labIds: [],
-    };
-  }
-
-  if (countActiveFilters(filters) === 0) return null;
-
-  let countryIso3s = filterCountries(filters)
-    .filter((result) => result.matchesFilter)
-    .map((result) => result.iso3);
-  let labIds = [...filters.selectedLabIds];
-
-  const query = filters.searchQuery.trim().toLowerCase();
-  if (query) {
-    const queryCountryIso3s = COUNTRIES
-      .filter((country) => country.iso3 !== "EUU")
-      .filter((country) =>
-        `${country.name} ${country.iso3} ${country.region}`.toLowerCase().includes(query)
-      )
-      .map((country) => country.iso3);
-    const queryLabIds = FRONTIER_LABS
-      .filter((lab) =>
-        `${lab.name} ${lab.hqCountryName} ${lab.hqIso3}`.toLowerCase().includes(query)
-      )
-      .map((lab) => lab.id);
-
-    if (queryCountryIso3s.length > 0) {
-      const queryCountrySet = new Set(queryCountryIso3s);
-      countryIso3s =
-        countActiveFilters({ ...DEFAULT_FILTER_STATE, searchQuery: filters.searchQuery }) ===
-        countActiveFilters(filters)
-          ? queryCountryIso3s
-          : countryIso3s.filter((iso3) => queryCountrySet.has(iso3));
-    }
-    labIds = unique([...labIds, ...queryLabIds]);
-  }
-
-  countryIso3s = unique(countryIso3s);
-  labIds = unique(labIds);
-  if (countryIso3s.length === 0 && labIds.length === 0) return null;
-
-  const countryLabel =
-    countryIso3s.length === 1
-      ? COUNTRY_BY_ISO3[countryIso3s[0]]?.name ?? countryIso3s[0]
-      : `${countryIso3s.length} countries`;
-  const labLabel =
-    labIds.length === 1 ? LAB_BY_ID[labIds[0]]?.name ?? labIds[0] : `${labIds.length} labs`;
-
-  return {
-    id: `filters:${JSON.stringify(filters)}:${selectedIso3 ?? ""}:${selectedLabId ?? ""}`,
-    label:
-      countryIso3s.length > 0 && labIds.length > 0
-        ? `${countryLabel}, ${labLabel}`
-        : countryIso3s.length > 0
-          ? countryLabel
-          : labLabel,
-    countryIso3s,
-    labIds,
-  };
-}
-
-function unique<T>(items: T[]): T[] {
-  return [...new Set(items)];
 }

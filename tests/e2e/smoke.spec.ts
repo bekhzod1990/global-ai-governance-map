@@ -6,6 +6,7 @@ test.describe("governance map smoke flows", () => {
 
     await expect(page.getByRole("heading", { name: "Global AI Governance Map" })).toBeVisible();
     await expect(page.getByRole("note")).toHaveCount(0);
+    await expect(page.getByLabel("Map scope: World overview")).toBeVisible();
 
     await page.getByRole("button", { name: "Data", exact: true }).click();
     await expect(page.getByRole("button", { name: "Download dataset JSON" })).toBeVisible();
@@ -87,6 +88,7 @@ test.describe("governance map smoke flows", () => {
     await page.getByRole("button", { name: /Who signed or ratified the Council of Europe AI Convention/ }).click();
     await expect(page).toHaveURL(/coe-ai-convention/);
     await expect(page.getByLabel("Map focus")).toHaveValue("results");
+    await expect(page.getByLabel(/Map scope: Fitted:/)).toBeVisible();
     await page.reload();
     await expect(page.getByText(/Instrument: Council of Europe Framework Convention/)).toBeVisible();
 
@@ -103,5 +105,38 @@ test.describe("governance map smoke flows", () => {
     await page.getByRole("button", { name: "Export CSV" }).click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toBe("global-ai-governance-map-instruments.csv");
+  });
+
+  test("keeps map result scope clear while filtering", async ({ page }) => {
+    await page.goto("/");
+
+    await expect(page.getByLabel("Map scope: World overview")).toBeVisible();
+
+    await page.getByRole("button", { name: /^Instrument/ }).click();
+    await page.getByLabel(/Bletchley Declaration/).check();
+    await page.keyboard.press("Escape");
+    await expect(page.getByLabel("Map focus")).toHaveValue("world");
+    await expect(page.getByLabel("Map scope: Matches: 29 countries")).toBeVisible();
+
+    await page.getByRole("button", { name: /Zoom to results/ }).click();
+    await expect(page.getByLabel("Map focus")).toHaveValue("results");
+    await expect(page.getByLabel("Map scope: Fitted: 29 countries")).toBeVisible();
+
+    const mapScope = page.getByRole("status", { name: /Map scope:/ });
+    const fittedBefore = await mapScope.getAttribute("aria-label");
+    await page.getByRole("button", { name: /^Region/ }).click();
+    await page.getByLabel("Europe").check();
+    await page.keyboard.press("Escape");
+    await expect(page.getByLabel("Map focus")).toHaveValue("results");
+    await expect(mapScope).not.toHaveAttribute("aria-label", fittedBefore ?? "");
+    await expect(mapScope).toHaveAttribute("aria-label", /Map scope: Fitted:/);
+
+    await page.getByLabel("Search countries, acts, instruments").fill("definitely-not-on-the-map");
+    await expect(page.getByLabel("Map focus")).toHaveValue("world");
+    await expect(page.getByLabel("Map scope: No map matches")).toBeVisible();
+
+    await page.locator("[data-filter-toolbar]").getByRole("button", { name: "Reset" }).click();
+    await expect(page.getByLabel("Map scope: World overview")).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
 });

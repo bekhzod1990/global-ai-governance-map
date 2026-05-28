@@ -299,6 +299,9 @@ export interface MapFitTarget {
   label: string;
   countryIso3s: string[];
   labIds: string[];
+  countryCount: number;
+  labCount: number;
+  summaryLabel: string;
 }
 
 // ===== Application state =====
