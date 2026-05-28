@@ -3,14 +3,15 @@ import { geoEqualEarth, geoPath, type GeoPermissibleObjects, type GeoProjection 
 import { ComposableMap, Geographies, Geography, Sphere, Graticule } from "react-simple-maps";
 import type { ProjectionFunction } from "react-simple-maps";
 import { feature } from "topojson-client";
+import type { Feature } from "geojson";
 import type { GeometryCollection, Topology } from "topojson-specification";
-import type { FilterState, FrontierLab, LensKind } from "../types";
+import type { FilterState, FrontierLab, LensKind, MapFitTarget } from "../types";
 import { numericToAlpha3 } from "../utils/normalizeCountry";
 import { COUNTRY_BY_ISO3 } from "../data/countries";
 import { filterCountries } from "../utils/filterCountries";
 import { getMapStyle } from "../utils/getMapColor";
 import { FRONTIER_LABS } from "../data/frontierLabs";
-import { LabPin } from "./LabPin";
+import { LAB_COORDINATES, LabPin } from "./LabPin";
 import { activateOnKeyboard } from "../utils/keyboardActivation";
 // Bundle the world topojson locally — eliminates the unpkg round-trip and
 // removes a known cause of first-paint stall when the CDN is slow/offline.
@@ -18,9 +19,13 @@ import worldTopo from "world-atlas/countries-110m.json";
 
 const GEO_DATA = worldTopo as unknown as Parameters<typeof Geographies>[0]["geography"];
 const TOPOLOGY = worldTopo as unknown as Topology<{ countries: GeometryCollection }>;
+type CountryFeature = Feature & {
+  id?: string | number;
+  properties?: { id?: string | number } | null;
+};
 const RAW_COUNTRY_FEATURES = feature(TOPOLOGY, TOPOLOGY.objects.countries) as unknown as {
   type: "FeatureCollection";
-  features: Array<{ id?: string | number; properties?: { id?: string | number } }>;
+  features: CountryFeature[];
 };
 const FITTED_COUNTRY_FEATURES = {
   ...RAW_COUNTRY_FEATURES,
@@ -29,10 +34,24 @@ const FITTED_COUNTRY_FEATURES = {
 const MAP_SIDE_PADDING = 8;
 const MAP_TOP_PADDING = 2;
 const MAP_BOTTOM_PADDING = 6;
+const FIT_SIDE_PADDING = 80;
+const FIT_TOP_PADDING = 60;
+const FIT_BOTTOM_PADDING = 96;
+const FIT_MOBILE_SIDE_PADDING = 24;
+const FIT_MOBILE_TOP_PADDING = 48;
+const FIT_MOBILE_BOTTOM_PADDING = 132;
+const FIT_TOP_SLACK = 16;
+const FIT_POINT_PADDING = 26;
 
 const BASE_COUNTRY_BOUNDS = geoPath(
   geoEqualEarth().scale(1).center([10, 10]).translate([0, 0])
 ).bounds(FITTED_COUNTRY_FEATURES);
+
+const COUNTRY_FEATURE_BY_ISO3 = new Map<string, CountryFeature>();
+for (const geo of RAW_COUNTRY_FEATURES.features) {
+  const iso3 = featureIso3(geo);
+  if (iso3) COUNTRY_FEATURE_BY_ISO3.set(iso3, geo);
+}
 
 interface Props {
   filters: FilterState;
@@ -47,6 +66,7 @@ interface Props {
   scaleBoost?: number;
   mapCenter?: [number, number];
   mapZoom?: number;
+  mapFitTarget?: MapFitTarget | null;
 }
 
 export function WorldMap({
@@ -62,6 +82,7 @@ export function WorldMap({
   scaleBoost = 1,
   mapCenter,
   mapZoom = 1,
+  mapFitTarget,
 }: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{
@@ -122,7 +143,39 @@ export function WorldMap({
     [projection]
   );
 
+  const projectedFitBounds = useMemo(() => {
+    if (!mapFitTarget) return null;
+    return getProjectedFitBounds(mapFitTarget, projection);
+  }, [mapFitTarget, projection]);
+
   const baseMapTransform = useMemo(() => {
+    if (projectedFitBounds) {
+      const [[x0, y0], [x1, y1]] = projectedFitBounds;
+      const boundedWidth = Math.max(1, x1 - x0);
+      const boundedHeight = Math.max(1, y1 - y0);
+      const isCompact = dims.width < 640;
+      const sidePadding = isCompact ? FIT_MOBILE_SIDE_PADDING : FIT_SIDE_PADDING;
+      const topPadding = isCompact ? FIT_MOBILE_TOP_PADDING : FIT_TOP_PADDING;
+      const bottomPadding = isCompact ? FIT_MOBILE_BOTTOM_PADDING : FIT_BOTTOM_PADDING;
+      const availableWidth = Math.max(1, dims.width - sidePadding * 2);
+      const availableHeight = Math.max(1, dims.height - topPadding - bottomPadding);
+      const fitZoom = clamp(
+        Math.min(availableWidth / boundedWidth, availableHeight / boundedHeight),
+        1,
+        4
+      );
+      const zoom = clamp(fitZoom * mapZoom, 1, 4);
+      const fittedHeight = boundedHeight * zoom;
+      const centeredTop = topPadding + (availableHeight - fittedHeight) / 2;
+      const targetTop = topPadding + Math.max(0, Math.min(FIT_TOP_SLACK, centeredTop - topPadding));
+
+      return {
+        x: dims.width / 2 - ((x0 + x1) / 2) * zoom,
+        y: targetTop - y0 * zoom,
+        k: zoom,
+      };
+    }
+
     const focusPoint = mapCenter
       ? projection(mapCenter)
       : [
@@ -140,7 +193,7 @@ export function WorldMap({
       y: targetPoint[1] - focusPoint[1] * mapZoom,
       k: mapZoom,
     };
-  }, [dims.height, dims.width, mapCenter, mapZoom, projectedCountryBounds, projection]);
+  }, [dims.height, dims.width, mapCenter, mapZoom, projectedCountryBounds, projectedFitBounds, projection]);
 
   const panKey = `${baseMapTransform.x}:${baseMapTransform.y}:${baseMapTransform.k}`;
   const panOffset = panState.key === panKey ? panState.offset : ([0, 0] as [number, number]);
@@ -319,8 +372,39 @@ export function WorldMap({
   );
 }
 
-function featureIso3(geo: { id?: string | number; properties?: { id?: string | number } }) {
+function featureIso3(geo: { id?: string | number; properties?: { id?: string | number } | null }) {
   return numericToAlpha3(geo.id ?? geo.properties?.id);
+}
+
+function getProjectedFitBounds(target: MapFitTarget, projection: GeoProjection) {
+  const path = geoPath(projection);
+  const bounds: Array<[[number, number], [number, number]]> = [];
+
+  for (const iso3 of target.countryIso3s) {
+    const geo = COUNTRY_FEATURE_BY_ISO3.get(iso3);
+    if (!geo) continue;
+    bounds.push(path.bounds(geo as GeoPermissibleObjects));
+  }
+
+  for (const labId of target.labIds) {
+    const projected = projection(LAB_COORDINATES[labId]);
+    if (!projected) continue;
+    const [x, y] = projected;
+    bounds.push([
+      [x - FIT_POINT_PADDING, y - FIT_POINT_PADDING],
+      [x + FIT_POINT_PADDING, y + FIT_POINT_PADDING],
+    ]);
+  }
+
+  if (bounds.length === 0) return null;
+
+  return bounds.reduce<[[number, number], [number, number]]>(
+    (acc, bound) => [
+      [Math.min(acc[0][0], bound[0][0]), Math.min(acc[0][1], bound[0][1])],
+      [Math.max(acc[1][0], bound[1][0]), Math.max(acc[1][1], bound[1][1])],
+    ],
+    bounds[0]
+  );
 }
 
 function adjustColor(hex: string, percent: number): string {
@@ -329,4 +413,8 @@ function adjustColor(hex: string, percent: number): string {
   const g = Math.max(0, Math.min(255, ((n >> 8) & 255) + percent));
   const b = Math.max(0, Math.min(255, (n & 255) + percent));
   return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, "0")}`;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, Number(value.toFixed(2))));
 }

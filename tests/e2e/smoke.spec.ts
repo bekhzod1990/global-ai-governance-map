@@ -18,6 +18,7 @@ test.describe("governance map smoke flows", () => {
     expect(download.suggestedFilename()).toMatch(/^global-ai-governance-map-citation-.*\.txt$/);
 
     await page.getByRole("button", { name: "Canada - open country details" }).press("Enter");
+    await expect(page.getByLabel("Map focus")).toHaveValue("results");
     await expect(page.getByRole("dialog", { name: "Canada AI governance details" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Report correction" }).first()).toBeVisible();
   });
@@ -85,6 +86,7 @@ test.describe("governance map smoke flows", () => {
     await page.getByRole("button", { name: "Questions" }).click();
     await page.getByRole("button", { name: /Who signed or ratified the Council of Europe AI Convention/ }).click();
     await expect(page).toHaveURL(/coe-ai-convention/);
+    await expect(page.getByLabel("Map focus")).toHaveValue("results");
     await page.reload();
     await expect(page.getByText(/Instrument: Council of Europe Framework Convention/)).toBeVisible();
 

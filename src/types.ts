@@ -294,6 +294,13 @@ export interface ResearchPreset {
   timelineLane?: TimelineLane;
 }
 
+export interface MapFitTarget {
+  id: string;
+  label: string;
+  countryIso3s: string[];
+  labIds: string[];
+}
+
 // ===== Application state =====
 export interface FilterState {
   selectedInstrumentIds: string[];
