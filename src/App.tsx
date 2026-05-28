@@ -298,9 +298,6 @@ export default function App() {
             <h1 className="text-base font-semibold leading-tight tracking-tight text-ink-900">
               Global AI Governance Map
             </h1>
-            <p className="hidden text-[11px] leading-tight text-ink-500 md:block">
-              Frontier AI governance: actors, instruments, dependencies
-            </p>
           </div>
 
           <LensSwitch value={lens} onChange={handleLensChange} />
