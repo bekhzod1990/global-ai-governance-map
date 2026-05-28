@@ -12,6 +12,7 @@ import { downloadTextFile } from "../utils/exportDataset";
 import { filterCountries } from "../utils/filterCountries";
 import { DATA_CONFIDENCE_LABELS, SOURCE_KIND_LABELS, VERIFICATION_STATUS_LABELS } from "../utils/getVerificationLabel";
 import { getCountryGovernanceSummary } from "../utils/getCountryGovernanceSummary";
+import { isConfirmedBindingNationalRegulation } from "../utils/governanceTaxonomy";
 
 type DatasetKey = "countries" | "instruments" | "national" | "labs" | "participation" | "sources";
 
@@ -287,8 +288,9 @@ function buildRows(
     return NATIONAL_AI_REGULATIONS.filter((reg) => {
       const country = reg.countryIso3 ? COUNTRY_BY_ISO3[reg.countryIso3] : null;
       if (filters.selectedRegions.length && country && !filters.selectedRegions.includes(country.region)) return false;
-      if (filters.hasBindingNationalLaw === "yes" && reg.bindingStatus !== "binding") return false;
-      if (filters.hasBindingNationalLaw === "no" && reg.bindingStatus === "binding") return false;
+      const isConfirmedBinding = isConfirmedBindingNationalRegulation(reg);
+      if (filters.hasBindingNationalLaw === "yes" && !isConfirmedBinding) return false;
+      if (filters.hasBindingNationalLaw === "no" && isConfirmedBinding) return false;
       if (filters.hasAnyAIRule === "no") return false;
       if (filters.frontierAIRelevant === "yes" && !reg.frontierAIRelevant) return false;
       if (filters.frontierAIRelevant === "no" && reg.frontierAIRelevant) return false;

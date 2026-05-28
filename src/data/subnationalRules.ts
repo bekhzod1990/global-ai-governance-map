@@ -40,7 +40,7 @@ export const SUBNATIONAL_AI_RULES: SubnationalAIRule[] = [
     summary:
       "Requires employers using AI to analyse candidate video interviews to disclose use, obtain consent, and limit data sharing.",
     sourceName: "Illinois General Assembly — 820 ILCS 42",
-    sourceUrl: "https://ilga.gov/legislation/ilcs/ilcs3.asp?ActID=4015&ChapterID=68",
+    sourceUrl: "https://www.ilga.gov/legislation/ilcs/fulltext?DocName=082000420K1",
   },
   {
     id: "us-nyc-local-law-144",
@@ -92,12 +92,12 @@ export const SUBNATIONAL_AI_RULES: SubnationalAIRule[] = [
     jurisdictionName: "California",
     jurisdictionType: "us_state",
     type: "framework",
-    bindingStatus: "mixed",
+    bindingStatus: "non_binding",
     aiSpecific: true,
     status: "Representative package entry; not a single codified act",
     dateAdopted: "2025-09-29",
     summary:
-      "Represents California's 2025 state-level AI lawmaking activity. SB 53 is separately tracked as the binding frontier-AI transparency law; the broader package count and boundaries require bill-by-bill verification.",
+      "Represents California's 2025 state-level AI lawmaking activity. SB 53 is separately tracked as the binding frontier-AI transparency law; this package marker is not counted as binding law until the broader package boundaries are verified bill by bill.",
     sourceName: "Governor of California - SB 53 signing",
     sourceUrl:
       "https://www.gov.ca.gov/2025/09/29/governor-newsom-signs-sb-53-advancing-californias-world-leading-artificial-intelligence-industry/",

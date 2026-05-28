@@ -15,7 +15,6 @@ import { Filters } from "./components/Filters";
 import { CountrySidePanel } from "./components/CountrySidePanel";
 import { LabSidePanel } from "./components/LabSidePanel";
 import { CountryTooltip } from "./components/CountryTooltip";
-import { DataQualityNotice } from "./components/DataQualityNotice";
 import { DataActions } from "./components/DataActions";
 import { SearchBox } from "./components/SearchBox";
 import { Legend } from "./components/Legend";
@@ -227,17 +226,28 @@ export default function App() {
       >
         Skip to main content
       </a>
-      <header className="z-20 flex shrink-0 flex-wrap items-center gap-3 border-b border-canvas-line bg-canvas-surface px-5 py-2.5">
-        <div className="min-w-0">
+      <header className="z-20 flex shrink-0 flex-wrap items-center gap-2 border-b border-canvas-line bg-canvas-surface px-4 py-1.5">
+        <div className="min-w-0 shrink-0">
           <h1 className="text-base font-semibold leading-tight tracking-tight text-ink-900">
             Global AI Governance Map
           </h1>
-          <p className="text-[11px] leading-tight text-ink-500">
+          <p className="hidden text-[11px] leading-tight text-ink-500 md:block">
             Frontier AI governance: actors, instruments, dependencies
           </p>
         </div>
 
-        <div className="ml-auto flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 sm:gap-3">
+        <LensSwitch value={lens} onChange={handleLensChange} />
+
+        <div className="min-w-44 w-56 shrink-0 md:w-64 xl:w-72">
+          <SearchBox
+            query={filters.searchQuery}
+            onQueryChange={(query) => dispatch({ type: "set", filters: { ...filters, searchQuery: query } })}
+            onSelectCountry={(iso3) => handleSelectCountry(iso3)}
+            onSelectInstrument={(id) => dispatch({ type: "select-instrument", id })}
+          />
+        </div>
+
+        <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
           <div className="hidden text-right text-[11px] leading-tight text-ink-500 xl:block">
             <div>
               {stats.countries} countries · {stats.labs} labs · {stats.instruments} instruments
@@ -246,7 +256,6 @@ export default function App() {
               {stats.nationalRegs} national rules · {stats.edges} edges
             </div>
           </div>
-          <LensSwitch value={lens} onChange={handleLensChange} />
           <ResearchQuestionsPanel activePresetId={activePresetId} onApplyPreset={handleApplyPreset} />
           <DataActions onOpenMethodology={() => setShowMethodology(true)} />
           <button
@@ -256,14 +265,6 @@ export default function App() {
           >
             Take the tour
           </button>
-          <div className="w-full min-w-52 max-w-xs sm:w-64">
-            <SearchBox
-              query={filters.searchQuery}
-              onQueryChange={(query) => dispatch({ type: "set", filters: { ...filters, searchQuery: query } })}
-              onSelectCountry={(iso3) => handleSelectCountry(iso3)}
-              onSelectInstrument={(id) => dispatch({ type: "select-instrument", id })}
-            />
-          </div>
         </div>
       </header>
 
@@ -271,10 +272,8 @@ export default function App() {
         {selectionAnnouncement}
       </div>
 
-      <DataQualityNotice />
-
       {/* Filter toolbar */}
-      <div className="z-10 shrink-0 border-b border-canvas-line bg-canvas-surface px-5 py-2">
+      <div data-filter-toolbar className="z-10 shrink-0 border-b border-canvas-line bg-canvas-surface px-4 py-1">
         <Filters
           filters={filters}
           onChange={(next) => dispatch({ type: "set", filters: next })}

@@ -18,12 +18,21 @@ import worldTopo from "world-atlas/countries-110m.json";
 
 const GEO_DATA = worldTopo as unknown as Parameters<typeof Geographies>[0]["geography"];
 const TOPOLOGY = worldTopo as unknown as Topology<{ countries: GeometryCollection }>;
-const COUNTRY_FEATURES = feature(TOPOLOGY, TOPOLOGY.objects.countries) as GeoPermissibleObjects;
-const MAP_PADDING = 12;
+const RAW_COUNTRY_FEATURES = feature(TOPOLOGY, TOPOLOGY.objects.countries) as unknown as {
+  type: "FeatureCollection";
+  features: Array<{ id?: string | number; properties?: { id?: string | number } }>;
+};
+const FITTED_COUNTRY_FEATURES = {
+  ...RAW_COUNTRY_FEATURES,
+  features: RAW_COUNTRY_FEATURES.features.filter((geo) => featureIso3(geo) !== "ATA"),
+} as unknown as GeoPermissibleObjects;
+const MAP_SIDE_PADDING = 8;
+const MAP_TOP_PADDING = 2;
+const MAP_BOTTOM_PADDING = 6;
 
 const BASE_COUNTRY_BOUNDS = geoPath(
   geoEqualEarth().scale(1).center([10, 10]).translate([0, 0])
-).bounds(COUNTRY_FEATURES);
+).bounds(FITTED_COUNTRY_FEATURES);
 
 interface Props {
   filters: FilterState;
@@ -74,8 +83,8 @@ export function WorldMap({
     const [[x0, y0], [x1, y1]] = BASE_COUNTRY_BOUNDS;
     const boundedWidth = x1 - x0;
     const boundedHeight = y1 - y0;
-    const availableWidth = Math.max(1, dims.width - MAP_PADDING * 2);
-    const availableHeight = Math.max(1, dims.height - MAP_PADDING * 2);
+    const availableWidth = Math.max(1, dims.width - MAP_SIDE_PADDING * 2);
+    const availableHeight = Math.max(1, dims.height - MAP_TOP_PADDING - MAP_BOTTOM_PADDING);
     const scale = Math.min(
       availableWidth / boundedWidth,
       availableHeight / boundedHeight
@@ -86,7 +95,7 @@ export function WorldMap({
       .center([10, 10])
       .translate([
         dims.width / 2 - ((x0 + x1) / 2) * scale,
-        MAP_PADDING - y0 * scale,
+        MAP_TOP_PADDING - y0 * scale,
       ]) as unknown as ProjectionFunction;
   }, [dims.width, dims.height]);
 
@@ -108,6 +117,7 @@ export function WorldMap({
             geographies.map((geo) => {
               const numericId = (geo.id as string) ?? geo.properties?.id;
               const iso3 = numericToAlpha3(numericId);
+              if (iso3 === "ATA") return null;
               if (!iso3 || !COUNTRY_BY_ISO3[iso3]) {
                 return (
                   <Geography
@@ -208,6 +218,10 @@ export function WorldMap({
       </ComposableMap>
     </div>
   );
+}
+
+function featureIso3(geo: { id?: string | number; properties?: { id?: string | number } }) {
+  return numericToAlpha3(geo.id ?? geo.properties?.id);
 }
 
 function adjustColor(hex: string, percent: number): string {

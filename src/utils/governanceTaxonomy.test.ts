@@ -9,6 +9,7 @@ import {
   classifyInternationalInstrument,
   classifyNationalEntry,
   classifyParticipation,
+  isConfirmedBindingNationalRegulation,
 } from "./governanceTaxonomy";
 
 describe("governance taxonomy", () => {
@@ -37,8 +38,23 @@ describe("governance taxonomy", () => {
     expect(assessSourceUrl("https://www.gov.ca.gov/example").sourceKind).toBe("official");
     expect(assessSourceUrl("https://www.cencenelec.eu/example").sourceKind).toBe("official");
     expect(assessSourceUrl("https://developers.openai.com/api/docs/models/all").sourceKind).toBe("official");
+    expect(assessSourceUrl("https://vanban.chinhphu.vn/?docid=216334").sourceKind).toBe("official");
+    expect(assessSourceUrl("https://law.nstc.gov.tw/EngLawContent.aspx?id=10099").sourceKind).toBe("official");
+    expect(assessSourceUrl("https://pisrs.si/pregledPredpisa?id=ZAKO9225").sourceKind).toBe("official");
     expect(assessSourceUrl("https://perma.cc/example").sourceKind).toBe("secondary");
     expect(assessSourceUrl("http://example.com").issues).toContain("source URL is not HTTPS");
+  });
+
+  it("excludes unverified binding claims from confirmed binding-law logic", () => {
+    const uncertain = {
+      ...NATIONAL_REG_BY_ID["vn-ai-law-2025"],
+      verificationStatus: "uncertain" as const,
+      confidence: "low" as const,
+    };
+
+    expect(isConfirmedBindingNationalRegulation(NATIONAL_REG_BY_ID["vn-ai-law-2025"])).toBe(true);
+    expect(isConfirmedBindingNationalRegulation(uncertain)).toBe(false);
+    expect(classifyNationalEntry(uncertain).className).toBe("unverified_binding_claim");
   });
 
   it("keeps official-source corrections for high-impact records", () => {
@@ -49,7 +65,7 @@ describe("governance taxonomy", () => {
     expect(NATIONAL_REG_BY_ID["jp-ai-promotion-act"].dateInForce).toBe("2025-06-04");
     expect(NATIONAL_REG_BY_ID["ca-aida-proposed"].status).toContain("Historical proposal");
     expect(NATIONAL_REG_BY_ID["us-take-it-down-act-2025"].frontierAIRelevant).toBe(false);
-    expect(SUBNATIONAL_BY_ID["us-ca-2025-ai-package"].bindingStatus).toBe("mixed");
+    expect(SUBNATIONAL_BY_ID["us-ca-2025-ai-package"].bindingStatus).toBe("non_binding");
     expect(SUBNATIONAL_BY_ID["us-ca-2025-ai-package"].verificationStatus).toBe("uncertain");
   });
 

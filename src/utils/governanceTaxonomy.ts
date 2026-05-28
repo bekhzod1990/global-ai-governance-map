@@ -5,11 +5,13 @@ import type {
   SourceKind,
   VerificationMetadata,
 } from "../types";
+import sourceHosts from "../data/sourceHosts.json";
 
 export const DATA_SNAPSHOT_DATE = "2026-05-19";
 
 export type NationalEntryClass =
   | "binding_ai_law"
+  | "unverified_binding_claim"
   | "proposed_ai_law"
   | "guidance_or_framework"
   | "voluntary_standard_or_code"
@@ -36,119 +38,21 @@ export interface SourceAssessment {
   issues: string[];
 }
 
-const OFFICIAL_HOST_SUFFIXES = [
-  ".gov",
-  ".gov.uk",
-  ".gov.au",
-  ".gov.bd",
-  ".gov.do",
-  ".gov.eg",
-  ".gov.gh",
-  ".gov.il",
-  ".gov.jm",
-  ".gov.ke",
-  ".gov.ma",
-  ".gov.my",
-  ".gov.ng",
-  ".gov.pl",
-  ".gov.ru",
-  ".gov.sa",
-  ".gov.sg",
-  ".gov.sk",
-  ".gov.cn",
-  ".gov.si",
-  ".gov.se",
-  ".gov.tw",
-  ".gov.za",
-  ".govt.nz",
-  ".go.jp",
-  ".go.kr",
-  ".gob.do",
-  ".gob.es",
-  ".gob.mx",
-  ".gouv.fr",
-  ".gc.ca",
-  ".europa.eu",
-  ".coe.int",
-  ".oecd.org",
-  ".unesco.org",
-  ".un.org",
-  ".iso.org",
-  ".asean.org",
-  ".au.int",
-  ".apec.org",
-  ".g7italy.it",
-  ".elysee.fr",
-  ".admin.ch",
-  ".parliament.uk",
-];
-
-const OFFICIAL_HOSTS = new Set([
-  "asean.org",
-  "au.int",
-  "oecd.ai",
-  "wp.oecd.ai",
-  "eur-lex.europa.eu",
-  "digital-strategy.ec.europa.eu",
-  "legalinstruments.oecd.org",
-  "digitallibrary.un.org",
-  "treatydatabase.overheid.nl",
-  "www.gov.uk",
-  "www.nist.gov",
-  "www.iso.org",
-  "www.cencenelec.eu",
-  "www.coe.int",
-  "www.congress.gov",
-  "www.gazzettaufficiale.it",
-  "adilet.zan.kz",
-  "quochoi.vn",
-  "moda.gov.tw",
-  "www.gov.si",
-  "www.nysenate.gov",
-  "ilga.gov",
-  "www.ilga.gov",
-  "leginfo.legislature.ca.gov",
-  "www.gov.ca.gov",
-  "www.nyc.gov",
-  "rc.majlis.ir",
-  "publication.pravo.gov.ru",
-  "static.kremlin.ru",
-  "www25.senado.leg.br",
-  "www.asamblea.go.cr",
-  "www2.tbmm.gov.tr",
-  "idda.az",
-  "ictd.gov.bd",
-  "ai-innovation.id",
-  "ict.go.ke",
-  "ai.in.th",
-  "mitci.govmu.org",
-  "www.frontiermodelforum.org",
-  "developers.openai.com",
-  "www.anthropic.com",
-  "deepmind.google",
-  "ai.meta.com",
-  "azure.microsoft.com",
-  "www.aboutamazon.com",
-  "x.ai",
-  "mistral.ai",
-  "cohere.com",
-  "api-docs.deepseek.com",
-  "ernie.baidu.com",
-  "www.alibabacloud.com",
-  "hunyuan.tencent.com",
-  "www.nvidia.com",
-]);
-
-const SECONDARY_HOSTS = new Set([
-  "perma.cc",
-  "oecd-opsi.org",
-  "www.srgresearch.com",
-  "www.synergyresearchgroup.com",
-]);
+const OFFICIAL_HOST_SUFFIXES = sourceHosts.officialHostSuffixes;
+const OFFICIAL_HOSTS = new Set(sourceHosts.officialHosts);
+const SECONDARY_HOSTS = new Set(sourceHosts.secondaryHosts);
 
 export function classifyNationalEntry(entry: NationalAIRegulation): Classification & {
   className: NationalEntryClass;
 } {
+  if (entry.bindingStatus === "binding" && !isConfirmedBindingNationalRegulation(entry)) {
+    return {
+      className: "unverified_binding_claim",
+      label: "Unverified binding claim",
+      caveat:
+        "This record is retained for review but is not counted as confirmed binding AI law until direct official verification is available.",
+    };
+  }
   if (entry.bindingStatus === "binding") {
     return {
       className: "binding_ai_law",
@@ -190,6 +94,15 @@ export function classifyNationalEntry(entry: NationalAIRegulation): Classificati
     label: "Guidance, strategy, or framework",
     caveat: "Non-binding policy instruments should not be treated as enforceable AI law.",
   };
+}
+
+export function isConfirmedBindingNationalRegulation(entry: NationalAIRegulation): boolean {
+  return (
+    entry.bindingStatus === "binding" &&
+    entry.verificationStatus !== "uncertain" &&
+    entry.verificationStatus !== "needs_external_check" &&
+    entry.confidence !== "low"
+  );
 }
 
 export function classifyInternationalInstrument(instrument: InternationalInstrument): Classification & {

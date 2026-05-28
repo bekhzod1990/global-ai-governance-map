@@ -241,8 +241,7 @@ export const INTERNATIONAL_INSTRUMENTS: InternationalInstrument[] = [
     summary:
       "Operationalizes the Hiroshima Code by giving companies a structured way to disclose governance, risk-management, incident handling, and safety practices for advanced AI systems.",
     sourceName: "OECD.AI — HAIP framework",
-    sourceUrl:
-      "https://oecd.ai/en/wonk/hiroshima-ai-process-reporting-framework",
+    sourceUrl: "https://oecd.ai/en/transparency/overview",
     ...OFFICIAL_LIKELY,
     powerScore: 4,
   },
@@ -701,7 +700,7 @@ export const INTERNATIONAL_INSTRUMENTS: InternationalInstrument[] = [
       "Bilateral MoU between the UK and U.S. AI Safety Institutes (AISI / CAISI) on cooperation, joint evaluations, methods, personnel exchanges, and information-sharing.",
     sourceName: "GOV.UK — UK–US AI Safety MoU",
     sourceUrl:
-      "https://www.gov.uk/government/publications/memorandum-of-understanding-between-the-government-of-the-united-states-of-america-and-the-government-of-the-united-kingdom-of-great-britain-and-northern",
+      "https://www.gov.uk/government/publications/collaboration-on-the-safety-of-ai-uk-us-memorandum-of-understanding/collaboration-on-the-safety-of-ai-uk-us-memorandum-of-understanding",
     ...OFFICIAL_LIKELY,
     powerScore: 3,
   },

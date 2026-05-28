@@ -148,7 +148,7 @@ function FilterDropdown({ label, count, align = "left", width = 320, children }:
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         className={clsx(
-          "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+          "flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors",
           count > 0
             ? "border-accent bg-accent text-white shadow-sm hover:bg-accent/90"
             : "border-canvas-line bg-white text-ink-700 hover:border-ink-400"
@@ -367,8 +367,8 @@ export function Filters({ filters, onChange, onReset }: Props) {
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="space-y-1">
+      <div className="flex flex-wrap items-center gap-1.5">
       {/* International instrument (with AND/OR mode) */}
       <FilterDropdown
         label="Instrument"
@@ -566,7 +566,7 @@ export function Filters({ filters, onChange, onReset }: Props) {
         type="button"
         onClick={onReset}
         disabled={activeCount === 0}
-        className="ml-auto rounded-md border border-canvas-line bg-white px-2.5 py-1 text-[11px] font-medium text-ink-700 hover:border-ink-400 disabled:opacity-40"
+        className="ml-auto rounded-md border border-canvas-line bg-white px-2 py-1 text-[11px] font-medium text-ink-700 hover:border-ink-400 disabled:opacity-40"
       >
         Reset
       </button>

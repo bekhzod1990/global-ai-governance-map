@@ -82,6 +82,9 @@ export function LabSidePanel({ labId, onClose }: Props) {
                 Maturity: {lab.safetyFramework.maturity}
               </p>
               <div className="mt-2">
+                <VerificationMeta item={lab.safetyFramework} compact />
+              </div>
+              <div className="mt-2">
                 <SourceLink
                   name={lab.safetyFramework.sourceName}
                   url={lab.safetyFramework.sourceUrl}

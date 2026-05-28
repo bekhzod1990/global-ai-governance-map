@@ -5,7 +5,7 @@ test.describe("governance map smoke flows", () => {
     await page.goto("/");
 
     await expect(page.getByRole("heading", { name: "Global AI Governance Map" })).toBeVisible();
-    await expect(page.getByText(/Research dashboard, not legal advice/)).toBeVisible();
+    await expect(page.getByRole("note")).toHaveCount(0);
 
     await page.getByRole("button", { name: "Data", exact: true }).click();
     await expect(page.getByRole("button", { name: "Download dataset JSON" })).toBeVisible();

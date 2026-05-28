@@ -23,6 +23,7 @@ export const FRONTIER_LABS: FrontierLab[] = [
     safetyFramework: {
       name: "Preparedness Framework",
       maturity: "published",
+      ...LAB_SOURCE_METADATA,
       sourceName: "OpenAI — Preparedness Framework",
       sourceUrl: "https://openai.com/index/updating-our-preparedness-framework/",
     },
@@ -44,6 +45,7 @@ export const FRONTIER_LABS: FrontierLab[] = [
     safetyFramework: {
       name: "Responsible Scaling Policy",
       maturity: "published",
+      ...LAB_SOURCE_METADATA,
       sourceName: "Anthropic — Responsible Scaling Policy",
       sourceUrl: "https://www.anthropic.com/news/anthropics-responsible-scaling-policy",
     },
@@ -71,6 +73,7 @@ export const FRONTIER_LABS: FrontierLab[] = [
     safetyFramework: {
       name: "Frontier Safety Framework",
       maturity: "published",
+      ...LAB_SOURCE_METADATA,
       sourceName: "Google DeepMind — Frontier Safety Framework",
       sourceUrl: "https://deepmind.google/discover/blog/introducing-the-frontier-safety-framework/",
     },
@@ -92,6 +95,7 @@ export const FRONTIER_LABS: FrontierLab[] = [
     safetyFramework: {
       name: "Advanced AI Scaling Framework",
       maturity: "published",
+      ...LAB_SOURCE_METADATA,
       sourceName: "Meta — Advanced AI Scaling Framework v2",
       sourceUrl: "https://ai.meta.com/static-resource/Meta_Advanced-AI-Scaling-Framework-v2",
     },
@@ -113,6 +117,7 @@ export const FRONTIER_LABS: FrontierLab[] = [
     safetyFramework: {
       name: "Frontier Governance Framework",
       maturity: "published",
+      ...LAB_SOURCE_METADATA,
       sourceName: "Microsoft — Frontier Governance Framework",
       sourceUrl: "https://blogs.microsoft.com/on-the-issues/2024/05/01/responsible-ai-transparency-report/",
     },
@@ -134,8 +139,10 @@ export const FRONTIER_LABS: FrontierLab[] = [
     safetyFramework: {
       name: "Frontier Model Safety Framework",
       maturity: "published",
-      sourceName: "Amazon — Frontier Model Safety Framework",
-      sourceUrl: "https://www.aboutamazon.com/news/aws/amazon-nova-frontier-model-safety-framework",
+      ...LAB_SOURCE_METADATA,
+      sourceName: "Amazon Science — Nova Premier critical-risk evaluation",
+      sourceUrl:
+        "https://www.amazon.science/publications/evaluating-the-critical-risks-of-amazons-nova-premier-under-the-frontier-model-safety-framework",
     },
     isFMFMember: true,
     regulatoryExposureIds: ["eu-ai-act", "us-nist-ai-rmf", "seoul-frontier-ai-safety-commitments"],
@@ -155,6 +162,7 @@ export const FRONTIER_LABS: FrontierLab[] = [
     safetyFramework: {
       name: "Risk Management Framework",
       maturity: "published",
+      ...LAB_SOURCE_METADATA,
       sourceName: "xAI — Risk Management Framework",
       sourceUrl: "https://x.ai/news/grok-3",
     },
@@ -176,6 +184,7 @@ export const FRONTIER_LABS: FrontierLab[] = [
     safetyFramework: {
       name: "Trust & compliance posture (EU AI Act compliance hub)",
       maturity: "internal",
+      ...LAB_SOURCE_METADATA,
       sourceName: "Mistral AI",
       sourceUrl: "https://mistral.ai/models",
     },
@@ -202,8 +211,9 @@ export const FRONTIER_LABS: FrontierLab[] = [
     safetyFramework: {
       name: "Secure AI Frontier Model Framework",
       maturity: "published",
+      ...LAB_SOURCE_METADATA,
       sourceName: "Cohere — Secure AI Frontier Model Framework",
-      sourceUrl: "https://cohere.com/security/frontier-model-framework",
+      sourceUrl: "https://cohere.com/blog/secure-model-framework",
     },
     isFMFMember: false,
     regulatoryExposureIds: [
@@ -228,6 +238,7 @@ export const FRONTIER_LABS: FrontierLab[] = [
     safetyFramework: {
       name: "Usage restrictions / ToS",
       maturity: "internal",
+      ...LAB_SOURCE_METADATA,
       sourceName: "DeepSeek — Terms of Use",
       sourceUrl: "https://api-docs.deepseek.com/news/news250120",
     },
@@ -249,6 +260,7 @@ export const FRONTIER_LABS: FrontierLab[] = [
     safetyFramework: {
       name: "Self-discipline / responsible AI principles",
       maturity: "internal",
+      ...LAB_SOURCE_METADATA,
       sourceName: "Baidu ERNIE — Release notes",
       sourceUrl: "https://ernie.baidu.com/blog/posts/ernie-5.1-0508-release/",
     },
@@ -270,6 +282,7 @@ export const FRONTIER_LABS: FrontierLab[] = [
     safetyFramework: {
       name: "AI Guardrails + Qwen3Guard",
       maturity: "published",
+      ...LAB_SOURCE_METADATA,
       sourceName: "Alibaba Cloud — Qwen3",
       sourceUrl: "https://www.alibabacloud.com/en/press-room/alibaba-introduces-qwen3-setting-new-benchmark?_p_lc=1",
     },
@@ -291,6 +304,7 @@ export const FRONTIER_LABS: FrontierLab[] = [
     safetyFramework: {
       name: "Responsible AI principles / internal risk governance",
       maturity: "internal",
+      ...LAB_SOURCE_METADATA,
       sourceName: "Tencent Hunyuan",
       sourceUrl: "https://hunyuan.tencent.com/",
     },

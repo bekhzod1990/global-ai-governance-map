@@ -1,9 +1,10 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dataDir = path.join(root, "src", "data");
+const sourceHostConfigPath = path.join(dataDir, "sourceHosts.json");
 const args = new Map(
   process.argv.slice(2).map((arg) => {
     const [key, value = "true"] = arg.replace(/^--/, "").split("=");
@@ -11,114 +12,190 @@ const args = new Map(
   })
 );
 
-const OFFICIAL_HOSTS = new Set([
-  "www.gov.uk",
-  "www.nist.gov",
-  "www.cencenelec.eu",
-  "oecd.ai",
-  "wp.oecd.ai",
-  "legalinstruments.oecd.org",
-  "eur-lex.europa.eu",
-  "digitallibrary.un.org",
-  "www.iso.org",
-  "www.coe.int",
-  "asean.org",
-  "au.int",
-  "www.apec.org",
-  "www.frontiermodelforum.org",
-]);
-const OFFICIAL_SUFFIXES = [
-  ".gov",
-  ".gov.uk",
-  ".europa.eu",
-  ".coe.int",
-  ".oecd.org",
-  ".unesco.org",
-  ".un.org",
-  ".iso.org",
-  ".asean.org",
-  ".au.int",
-  ".apec.org",
-];
+const sourceHostConfig = JSON.parse(await fs.readFile(sourceHostConfigPath, "utf8"));
+const OFFICIAL_HOSTS = new Set(sourceHostConfig.officialHosts);
+const OFFICIAL_SUFFIXES = sourceHostConfig.officialHostSuffixes;
 
 const now = new Date();
-const records = [];
 
-for (const file of await fs.readdir(dataDir)) {
-  if (!file.endsWith(".ts")) continue;
-  const abs = path.join(dataDir, file);
-  const text = await fs.readFile(abs, "utf8");
+if (isCli()) {
+  const report = await buildSourceAuditReport({ checkLinks: args.has("check-links") });
+  const output = args.get("output");
+  if (output) {
+    await fs.writeFile(path.resolve(root, output), report);
+  }
+  console.log(report);
+}
+
+export async function buildSourceAuditReport({ checkLinks = false } = {}) {
+  const records = [];
+
+  for (const file of await fs.readdir(dataDir)) {
+    if (!file.endsWith(".ts")) continue;
+    const abs = path.join(dataDir, file);
+    const text = await fs.readFile(abs, "utf8");
+    records.push(
+      ...extractSourceRecordsFromText(text, path.relative(root, abs).replace(/\\/g, "/"))
+    );
+  }
+
+  const warnings = [];
+  for (const record of records) {
+    const host = getHost(record.sourceUrl);
+    const ageDays = record.lastVerified ? ageInDays(record.lastVerified) : null;
+    if (!record.lastVerified) warnings.push(warn(record, "missing lastVerified metadata"));
+    else if (ageDays !== null && ageDays > 180) warnings.push(warn(record, `lastVerified is ${ageDays} days old`));
+    else if (ageDays !== null && ageDays > 90) warnings.push(warn(record, `lastVerified is ${ageDays} days old; refresh soon`));
+    if (host && !isOfficialHost(host) && record.sourceKind === "official") {
+      warnings.push(warn(record, `sourceKind is official but host is not classified: ${host}`));
+    }
+    if (
+      record.verificationStatus === "uncertain" &&
+      ["binding", "mixed", "binding_regulation", "binding_on_parties"].includes(record.bindingStatus ?? "")
+    ) {
+      warnings.push(warn(record, "uncertain record has strong binding map effect"));
+    }
+  }
+
+  const linkWarnings = checkLinks ? await checkLinksForRecords(records) : [];
+
+  return [
+    "# Source Audit Report",
+    "",
+    `Generated: ${now.toISOString()}`,
+    `Records with sourceUrl: ${records.length}`,
+    "",
+    "## Metadata Warnings",
+    warnings.length ? warnings.map((item) => `- ${item}`).join("\n") : "No metadata warnings.",
+    "",
+    "## Link Warnings",
+    linkWarnings.length ? linkWarnings.map((item) => `- ${item}`).join("\n") : "No link warnings, or link checks were not requested.",
+    "",
+  ].join("\n");
+}
+
+export function extractSourceRecordsFromText(text, file = "inline.ts") {
+  const constants = extractMetadataConstants(text);
+  const spans = findObjectSpans(text);
   const sourceMatches = [...text.matchAll(/sourceUrl:\s*"([^"]+)"/g)];
-  for (const match of sourceMatches) {
-    const context = nearestObjectText(text, match.index);
-    const sharedMetadata = /\.\.\.(OFFICIAL_|LAB_SOURCE_METADATA)/.test(context);
-    records.push({
-      file: path.relative(root, abs).replace(/\\/g, "/"),
-      id: pick(context, /id:\s*"([^"]+)"/g) ?? "unknown",
-      name: pick(context, /name:\s*"([^"]+)"/g) ?? pick(context, /sourceName:\s*"([^"]+)"/g) ?? "Unnamed record",
-      sourceUrl: match[1],
-      sourceKind: pick(context, /sourceKind:\s*"([^"]+)"/g),
-      verificationStatus: pick(context, /verificationStatus:\s*"([^"]+)"/g),
-      confidence: pick(context, /confidence:\s*"([^"]+)"/g),
-      lastVerified: pick(context, /lastVerified:\s*"([^"]+)"/g),
-      bindingStatus: pick(context, /bindingStatus:\s*"([^"]+)"/g),
-      sharedMetadata,
-    });
+  return sourceMatches.map((match) => {
+    const sourceUrl = match[1];
+    const spanChain = spans
+      .filter((span) => span.start <= match.index && span.end >= match.index)
+      .sort((a, b) => a.end - a.start - (b.end - b.start));
+    const sourceSpan = spanChain[0] ?? { start: Math.max(0, match.index - 300), end: match.index + 600 };
+    const recordSpan = spanChain.find((span) => /id:\s*"([^"]+)"/.test(text.slice(span.start, span.end))) ?? sourceSpan;
+    const sourceContext = text.slice(sourceSpan.start, sourceSpan.end);
+    const recordContext = text.slice(recordSpan.start, recordSpan.end);
+    const sourceMetadata = extractMetadata(sourceContext, constants);
+    const recordMetadata = extractMetadata(recordContext, constants);
+    const metadata = { ...recordMetadata, ...sourceMetadata };
+    const parentId = pick(recordContext, /id:\s*"([^"]+)"/g);
+    const generatedParticipationId = generatedParticipationIdBefore(text, sourceSpan.start);
+    const propertyName = propertyNameBefore(text, sourceSpan.start);
+    const id =
+      pick(sourceContext, /id:\s*"([^"]+)"/g) ??
+      (parentId && propertyName ? `${parentId}.${propertyName}` : parentId) ??
+      generatedParticipationId ??
+      "unknown";
+
+    return {
+      file,
+      id,
+      name:
+        pick(sourceContext, /name:\s*"([^"]+)"/g) ??
+        pick(recordContext, /name:\s*"([^"]+)"/g) ??
+        pick(sourceContext, /sourceName:\s*"([^"]+)"/g) ??
+        "Unnamed record",
+      sourceUrl,
+      sourceKind: metadata.sourceKind,
+      verificationStatus: metadata.verificationStatus,
+      confidence: metadata.confidence,
+      lastVerified: metadata.lastVerified,
+      bindingStatus: metadata.bindingStatus ?? pick(recordContext, /bindingStatus:\s*"([^"]+)"/g),
+    };
+  });
+}
+
+function extractMetadataConstants(text) {
+  const constants = new Map();
+  const constMatches = [...text.matchAll(/const\s+(\w+)\s*=\s*\{([\s\S]*?)\n\}\s*(?:as const|satisfies)/g)];
+  for (const match of constMatches) {
+    constants.set(match[1], extractLiteralMetadata(match[2]));
   }
+  return constants;
 }
 
-const warnings = [];
-for (const record of records) {
-  const host = getHost(record.sourceUrl);
-  const ageDays = record.lastVerified ? ageInDays(record.lastVerified) : null;
-  if (!record.lastVerified && !record.sharedMetadata) warnings.push(warn(record, "missing lastVerified metadata"));
-  else if (ageDays !== null && ageDays > 180) warnings.push(warn(record, `lastVerified is ${ageDays} days old`));
-  else if (ageDays !== null && ageDays > 90) warnings.push(warn(record, `lastVerified is ${ageDays} days old; refresh soon`));
-  if (host && !isOfficialHost(host) && record.sourceKind === "official") {
-    warnings.push(warn(record, `sourceKind is official but host is not classified: ${host}`));
+function extractMetadata(context, constants) {
+  const metadata = {};
+  const spreadMatches = [...context.matchAll(/\.\.\.(\w+)/g)];
+  for (const spread of spreadMatches) {
+    Object.assign(metadata, constants.get(spread[1]) ?? {});
   }
-  if (record.verificationStatus === "uncertain" && ["binding", "mixed", "binding_regulation", "binding_on_parties"].includes(record.bindingStatus ?? "")) {
-    warnings.push(warn(record, "uncertain record has strong binding map effect"));
+  Object.assign(metadata, extractLiteralMetadata(context));
+  return metadata;
+}
+
+function extractLiteralMetadata(context) {
+  const metadata = {
+    sourceKind: pick(context, /sourceKind:\s*"([^"]+)"/g),
+    verificationStatus: pick(context, /verificationStatus:\s*"([^"]+)"/g),
+    confidence: pick(context, /confidence:\s*"([^"]+)"/g),
+    lastVerified: pick(context, /lastVerified:\s*"([^"]+)"/g),
+    bindingStatus: pick(context, /bindingStatus:\s*"([^"]+)"/g),
+  };
+  return Object.fromEntries(Object.entries(metadata).filter(([, value]) => value !== null));
+}
+
+function findObjectSpans(text) {
+  const spans = [];
+  const stack = [];
+  let quote = null;
+  let escaped = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+    if (quote) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === "\\") {
+        escaped = true;
+      } else if (char === quote) {
+        quote = null;
+      }
+      continue;
+    }
+    if (char === "\"" || char === "'" || char === "`") {
+      quote = char;
+    } else if (char === "{") {
+      stack.push(i);
+    } else if (char === "}") {
+      const start = stack.pop();
+      if (start !== undefined) spans.push({ start, end: i });
+    }
   }
+  return spans;
 }
 
-let linkWarnings = [];
-if (args.has("check-links")) {
-  linkWarnings = await checkLinks(records);
+function propertyNameBefore(text, objectStart) {
+  const prefix = text.slice(Math.max(0, objectStart - 80), objectStart);
+  return prefix.match(/([A-Za-z0-9_]+):\s*$/)?.[1] ?? null;
 }
 
-const report = [
-  "# Source Audit Report",
-  "",
-  `Generated: ${now.toISOString()}`,
-  `Records with sourceUrl: ${records.length}`,
-  "",
-  "## Metadata Warnings",
-  warnings.length ? warnings.map((item) => `- ${item}`).join("\n") : "No metadata warnings.",
-  "",
-  "## Link Warnings",
-  linkWarnings.length ? linkWarnings.map((item) => `- ${item}`).join("\n") : "No link warnings, or link checks were not requested.",
-  "",
-].join("\n");
-
-const output = args.get("output");
-if (output) {
-  await fs.writeFile(path.resolve(root, output), report);
+function generatedParticipationIdBefore(text, objectStart) {
+  const prefix = text.slice(Math.max(0, objectStart - 600), objectStart);
+  const callStart = prefix.lastIndexOf("makeRows(");
+  if (callStart === -1) return null;
+  const callPrefix = prefix.slice(callStart);
+  const instrumentId = callPrefix.match(/makeRows\(\s*"([^"]+)"/)?.[1];
+  const quotedArgs = [...callPrefix.matchAll(/,\s*"([^"]+)"/g)].map((match) => match[1]);
+  const participationType = quotedArgs.at(-1);
+  if (!instrumentId || !participationType) return null;
+  return `${instrumentId}::generated::${participationType}`;
 }
-console.log(report);
 
 function pick(context, regex) {
   const matches = [...context.matchAll(regex)];
   return matches.at(-1)?.[1] ?? null;
-}
-
-function nearestObjectText(text, index) {
-  const start = text.lastIndexOf("{", index);
-  const softEnd = text.indexOf("\n  },", index);
-  const nestedEnd = text.indexOf("\n    },", index);
-  const ends = [softEnd, nestedEnd].filter((value) => value >= 0);
-  const end = ends.length ? Math.min(...ends) + 6 : index + 600;
-  return text.slice(Math.max(0, start), Math.min(text.length, end));
 }
 
 function getHost(sourceUrl) {
@@ -143,11 +220,11 @@ function warn(record, message) {
   return `${record.file} :: ${record.id} :: ${message}`;
 }
 
-async function checkLinks(sourceRecords) {
+async function checkLinksForRecords(sourceRecords) {
   const unique = [...new Map(sourceRecords.map((record) => [record.sourceUrl, record])).values()];
   const warnings = [];
   let index = 0;
-  const workers = Array.from({ length: 6 }, async () => {
+  const workers = Array.from({ length: 3 }, async () => {
     while (index < unique.length) {
       const record = unique[index++];
       const result = await checkLink(record.sourceUrl);
@@ -158,18 +235,36 @@ async function checkLinks(sourceRecords) {
   return warnings.sort();
 }
 
+function isCli() {
+  return process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+}
+
 async function checkLink(sourceUrl) {
+  const headResult = await requestUrl(sourceUrl, "HEAD");
+  if (headResult === null) return null;
+  if (headResult === "retry") return (await requestUrl(sourceUrl, "GET")) ?? null;
+  return headResult;
+}
+
+async function requestUrl(sourceUrl, method) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5000);
+  const timeout = setTimeout(() => controller.abort(), 30000);
   try {
     const response = await fetch(sourceUrl, {
-      method: "HEAD",
+      method,
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (compatible; GlobalAIGovernanceMapSourceAudit/1.0; +https://global-ai-governance-map.vercel.app/)",
+        Accept: "text/html,application/xhtml+xml,application/pdf;q=0.9,*/*;q=0.8",
+      },
       redirect: "follow",
       signal: controller.signal,
     });
-    if (response.ok || response.status === 405 || response.status === 403) return null;
+    if (response.status < 400 || response.status === 405 || response.status === 403) return null;
+    if (method === "HEAD") return "retry";
     return `source URL returned HTTP ${response.status}: ${sourceUrl}`;
   } catch (error) {
+    if (method === "HEAD") return "retry";
     return `source URL check failed (${error instanceof Error ? error.name : "unknown"}): ${sourceUrl}`;
   } finally {
     clearTimeout(timeout);

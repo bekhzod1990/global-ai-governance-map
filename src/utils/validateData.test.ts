@@ -8,8 +8,8 @@ describe("validateData", () => {
     expect(report.ok).toBe(true);
   });
 
-  it("surfaces source-governance migration warnings", () => {
+  it("keeps explicit verification metadata on source-backed records", () => {
     const report = validateData();
-    expect(report.warnings.some((warning) => warning.includes("lack explicit verification metadata"))).toBe(true);
+    expect(report.warnings.some((warning) => warning.includes("lack explicit verification metadata"))).toBe(false);
   });
 });

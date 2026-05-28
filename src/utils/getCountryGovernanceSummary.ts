@@ -16,6 +16,7 @@ import type {
   NationalAIRegulation,
   SubnationalAIRule,
 } from "../types";
+import { isConfirmedBindingNationalRegulation } from "./governanceTaxonomy";
 
 export interface CountryGovernanceSummary {
   country: Country | null;
@@ -91,7 +92,7 @@ function computeCountryGovernanceSummary(iso3: string): CountryGovernanceSummary
   const subnationalRules = getSubnationalRulesByCountry(iso3);
   const edges = EDGES_BY_NODE[iso3] ?? { outgoing: [], incoming: [] };
 
-  const hasBindingNationalLaw = regulations.some((r) => r.bindingStatus === "binding");
+  const hasBindingNationalLaw = regulations.some(isConfirmedBindingNationalRegulation);
   const hasAnyAIRule = regulations.length > 0 || subnationalRules.length > 0;
   const hasFrontierAIRelevant =
     regulations.some((r) => r.frontierAIRelevant) ||

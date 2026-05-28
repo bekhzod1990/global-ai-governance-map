@@ -179,7 +179,7 @@ export interface FrontierLab extends VerificationMetadata {
   hqIso3: string;
   hqCountryName: string;
   flagshipModels: string[];
-  safetyFramework?: {
+  safetyFramework?: VerificationMetadata & {
     name: string;
     maturity: SafetyFrameworkMaturity;
     sourceName: string;

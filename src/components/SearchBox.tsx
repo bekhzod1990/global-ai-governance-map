@@ -55,15 +55,15 @@ export function SearchBox({ query, onQueryChange, onSelectCountry, onSelectInstr
   }
 
   return (
-    <div ref={rootRef} className="relative w-full max-w-md">
+    <div ref={rootRef} className="relative w-full">
       <label className="sr-only" htmlFor="global-search">
         Search countries, acts, instruments
       </label>
-      <div className="flex items-center gap-2 rounded-lg border border-canvas-line bg-white px-3 py-2 shadow-sm focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/30">
+      <div className="flex items-center gap-1.5 rounded-md border border-canvas-line bg-white px-2.5 py-1.5 shadow-sm focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/25">
         <svg
           aria-hidden="true"
-          width="16"
-          height="16"
+          width="14"
+          height="14"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -93,8 +93,8 @@ export function SearchBox({ query, onQueryChange, onSelectCountry, onSelectInstr
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
-          placeholder="Search countries, acts, agreements, organizations…"
-          className="w-full bg-transparent text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none"
+          placeholder="Search countries, acts..."
+          className="w-full bg-transparent text-xs text-ink-900 placeholder:text-ink-400 focus:outline-none"
         />
       </div>
 
@@ -102,7 +102,7 @@ export function SearchBox({ query, onQueryChange, onSelectCountry, onSelectInstr
         <ul
           id={listboxId}
           role="listbox"
-          className="policy-scroll absolute left-0 right-0 top-full z-40 mt-2 max-h-80 overflow-y-auto rounded-lg border border-canvas-line bg-white py-1 shadow-drawer"
+          className="policy-scroll absolute left-0 right-0 top-full z-40 mt-1.5 max-h-80 overflow-y-auto rounded-lg border border-canvas-line bg-white py-1 shadow-drawer"
         >
           {results.map((r, i) => (
             <li

@@ -1,6 +1,6 @@
 # Global AI Governance Map
 
-> Interactive policy-research dashboard that maps how **frontier AI** is governed today — countries, frontier-AI labs, international instruments, national + subnational rules, and the dependencies between them — viewable through four switchable lenses (geography, governance layer, dependency network, chronology).
+> Interactive policy-research dashboard that maps how **frontier AI** is governed today — countries, frontier-AI labs, international instruments, national + subnational rules, and the dependencies between them — viewable through five switchable lenses (geography, governance layer, dependency network, chronology, and research table).
 
 <p>
   <a href="https://global-ai-governance-map.vercel.app">
@@ -26,7 +26,7 @@
 
 - [Overview](#overview)
 - [What's on the map](#whats-on-the-map)
-- [Four lenses](#four-lenses-on-the-same-data)
+- [Five lenses](#five-lenses-on-the-same-data)
 - [Architecture](#architecture)
 - [Frontend stack](#frontend-stack)
 - [Backend / API](#backend--api)
@@ -48,7 +48,7 @@
 
 ## Overview
 
-The dashboard answers a deceptively simple question — *"how is frontier AI actually governed right now?"* — and gives a research-grade answer across four lenses on the same dataset.
+The dashboard answers a deceptively simple question — *"how is frontier AI actually governed right now?"* — and gives a research-grade answer across five lenses on the same dataset, with research-question presets, shareable URLs, source metadata, and exportable table workflows.
 
 It is **client-only**: a static Vite build, no backend, no paid APIs, no user accounts. Everything ships as JavaScript + JSON + an SVG world map. Deployment is a single `vercel deploy` from the project root, and the live site auto-rebuilds on every push to `main`.
 
@@ -67,7 +67,7 @@ A guided **"Take the tour"** walkthrough runs new visitors through a five-step n
 
 Out-of-scope items (GDPR, DPDP, generic cybersecurity, BIS/Wassenaar/JP-NL-US export controls, generic digital strategies) are catalogued in [`src/data/outOfScope.ts`](src/data/outOfScope.ts) with explicit `reasonExcluded` text.
 
-## Four lenses on the same data
+## Five lenses on the same data
 
 | Lens | What it does | Implementation |
 |---|---|---|
@@ -75,6 +75,7 @@ Out-of-scope items (GDPR, DPDP, generic cybersecurity, BIS/Wassenaar/JP-NL-US ex
 | **Layers** | Recolours countries by the highest governance layer present (corporate / national binding / proposed / voluntary / international only). | `getMapColor.ts → pickPrimaryLayer` (cached) |
 | **Network** | Force-directed graph of every actor and edge. Node size = power score, edge thickness = strength. Click highlights 1-hop neighbours. | `NetworkView.tsx`, `d3-force` 300-tick static layout |
 | **Timeline** | 115+ AI governance milestones plotted from 2017 (Finland AI Programme) → 2026 (Kazakhstan AI Law, Taiwan AI Basic Act, Vietnam AI Law). Filterable by international / national / subnational. | `TimelineView.tsx` |
+| **Table** | Sortable, filterable research table for countries, instruments, national rules, labs, participation rows, and source metadata; supports CSV export. | `TableView.tsx` |
 
 ## Architecture
 
@@ -426,6 +427,8 @@ Secondary sources are used only to discover leads, never as the authoritative fi
 
 ```bash
 npm run validate:data
+npm run audit:sources
+npm run audit:sources -- --check-links
 ```
 
 `validateData.ts` runs on dev-mode app start and logs a grouped console report. It checks:
@@ -434,7 +437,7 @@ npm run validate:data
 - Every national regulation has `aiSpecific === true`.
 - Every international instrument has `aiSpecific === true`.
 - Every participation row references a known instrument id and country iso3.
-- Every regulation and instrument has a `sourceUrl`.
+- Every regulation and instrument has a `sourceUrl`, source classification, verification status, confidence, and `lastVerified` metadata where available.
 - Source URLs are parseable and use classified hosts where possible.
 - Snapshot dates do not exceed 19 May 2026.
 - EU-only applicability rows do not attach to non-EU countries.

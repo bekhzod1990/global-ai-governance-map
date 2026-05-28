@@ -35,7 +35,8 @@ export const INFRASTRUCTURE_NODES: InfrastructureNode[] = [
     scopeCaveat:
       "Cloud providers are not regulators; they are private actors whose decisions function as governance because they hold scarce capacity.",
     sourceName: "Synergy Research — Cloud market share",
-    sourceUrl: "https://www.srgresearch.com/articles/q1-cloud-spending-grows",
+    sourceUrl:
+      "https://www.srgresearch.com/articles/q1-cloud-spending-grows-by-over-10-billion-from-2022-the-big-three-account-for-65-of-the-total",
   },
   {
     id: "us-bis-export-controls",

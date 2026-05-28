@@ -1,4 +1,4 @@
-import type { InternationalParticipation, ParticipationType } from "../types";
+import type { InternationalParticipation, ParticipationType, VerificationMetadata } from "../types";
 import {
   ASEAN_MEMBERS,
   AFRICAN_UNION_MEMBERS,
@@ -18,7 +18,7 @@ function makeRows(
   instrumentId: string,
   iso3List: ReadonlyArray<string>,
   participationType: ParticipationType,
-  options: { date?: string; sourceName?: string; sourceUrl?: string; notes?: string } = {}
+  options: { date?: string; sourceName?: string; sourceUrl?: string; notes?: string } & VerificationMetadata = {}
 ): InternationalParticipation[] {
   const inst = INSTRUMENT_BY_ID[instrumentId];
   if (!inst) {
@@ -36,6 +36,11 @@ function makeRows(
     sourceName,
     sourceUrl,
     notes: options.notes,
+    sourceKind: options.sourceKind ?? inst.sourceKind,
+    verificationStatus: options.verificationStatus ?? inst.verificationStatus,
+    confidence: options.confidence ?? inst.confidence,
+    lastVerified: options.lastVerified ?? inst.lastVerified,
+    verificationNotes: options.verificationNotes ?? inst.verificationNotes,
   }));
 }
 
@@ -112,12 +117,20 @@ rows.push(
     sourceName: "Council of Europe — Treaty Office, CETS No. 225",
     sourceUrl: "https://www.coe.int/en/web/conventions/full-list?module=signatures-by-treaty&treatynum=225",
     notes: "Signed 5 Sep 2024 or later; treaty not yet in force as of 19 May 2026.",
+    sourceKind: "official",
+    verificationStatus: "verified",
+    confidence: "high",
+    lastVerified: "2026-05-20",
   }),
   ...makeRows("coe-ai-convention", [EU], "ratified", {
     date: "2026-05-15",
     sourceName: "Council of Europe — Treaty Office, CETS No. 225",
     sourceUrl: "https://www.coe.int/en/web/conventions/full-list?module=signatures-by-treaty&treatynum=225",
     notes: "EU deposited its instrument of ratification on 15 May 2026.",
+    sourceKind: "official",
+    verificationStatus: "verified",
+    confidence: "high",
+    lastVerified: "2026-05-20",
   }),
 );
 
@@ -150,6 +163,10 @@ rows.push(
     sourceUrl:
       "https://www.gov.uk/government/publications/seoul-declaration-for-safe-innovative-and-inclusive-ai-ai-seoul-summit-2024/seoul-declaration-for-safe-innovative-and-inclusive-ai-by-participants-attending-the-leaders-session-ai-seoul-summit-21-may-2024",
     notes: "Launch members of the international network; renamed in December 2025.",
+    sourceKind: "official",
+    verificationStatus: "verified",
+    confidence: "high",
+    lastVerified: "2026-05-20",
   })
 );
 

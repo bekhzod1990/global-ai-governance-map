@@ -14,6 +14,24 @@ const OFFICIAL_LIKELY = {
   lastVerified: "2026-05-20",
 } as const;
 
+const OFFICIAL_NEEDS_CHECK = {
+  sourceKind: "official",
+  verificationStatus: "needs_external_check",
+  confidence: "low",
+  lastVerified: "2026-05-20",
+  verificationNotes:
+    "Existing source inventory entry needs direct record-level legal verification before being treated as authoritative.",
+} as const;
+
+const SECONDARY_NEEDS_CHECK = {
+  sourceKind: "secondary",
+  verificationStatus: "needs_external_check",
+  confidence: "low",
+  lastVerified: "2026-05-20",
+  verificationNotes:
+    "Secondary source retained as a lead; replace with a direct official source before relying on the legal-status claim.",
+} as const;
+
 export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
   // EU (regional)
   {
@@ -132,8 +150,13 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
       "Binding requirements for labelling AI-generated synthetic content (text, image, audio, video) with both explicit user-visible markings and embedded metadata.",
     frontierAIRelevant: true,
     sourceName: "CAC — AI Content Labeling Measures",
-    sourceUrl: "https://www.cac.gov.cn/2025-03/14/c_1743654039182840.htm",
+    sourceUrl: "https://www.cac.gov.cn/2025-03/14/c_1743654684782215.htm",
     ...OFFICIAL_LIKELY,
+    verificationStatus: "verified",
+    confidence: "high",
+    lastVerified: "2026-05-27",
+    verificationNotes:
+      "Official CAC notice confirms the AI-generated synthetic-content labeling measures and the 2025-09-01 effective date.",
   },
 
   // South Korea
@@ -359,9 +382,14 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     summary:
       "Japanese national AI safety institute responsible for safety evaluation, guidelines, and international cooperation.",
     frontierAIRelevant: true,
-    sourceName: "Japan AISI",
-    sourceUrl: "https://aisi.go.jp/en/",
+    sourceName: "Japan AISI — About AISI",
+    sourceUrl: "https://aisi.go.jp/home/aboutus/",
     ...OFFICIAL_LIKELY,
+    verificationStatus: "verified",
+    confidence: "high",
+    lastVerified: "2026-05-27",
+    verificationNotes:
+      "Official AISI page confirms establishment on 2024-02-14 and its role in AI safety evaluation, guidance, and international cooperation.",
   },
 
   // Singapore
@@ -497,21 +525,22 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     type: "law",
     bindingStatus: "binding",
     aiSpecific: true,
-    status: "Passed; awaiting full implementation",
-    dateAdopted: "2025-12-01",
+    status: "In force",
+    dateAdopted: "2025-12-10",
+    dateInForce: "2026-03-01",
     regulatorOrBody: "Ministry of Science and Technology",
     summary:
       "Risk-based AI statute with tiers including prohibited AI uses. Requires human oversight, fairness, transparency, non-bias and accountability. Providers self-classify risk and notify MoST for medium/high risk systems; high-risk systems require registration, risk assessments, and sample audits.",
     frontierAIRelevant: true,
-    sourceName: "Vietnam National Assembly — Law on AI",
-    sourceUrl: "https://quochoi.vn/Pages/dien-dan-truc-tuyen.aspx",
+    sourceName: "Vietnam Government Portal - Law 134/2025/QH15",
+    sourceUrl: "https://vanban.chinhphu.vn/?classid=1&docid=216334&pageid=27160&typegroupid=3",
     notes: "Builds on and supersedes the risk-based framework in the Law on Digital Technology Industry (June 2025).",
     sourceKind: "official",
-    verificationStatus: "uncertain",
-    confidence: "low",
-    lastVerified: "2026-05-20",
+    verificationStatus: "verified",
+    confidence: "high",
+    lastVerified: "2026-05-27",
     verificationNotes:
-      "Current source URL is generic and did not provide a stable direct law record in this pass; verify status/date against a direct National Assembly or official gazette record before relying on map coloring.",
+      "Government legal database record confirms Law 134/2025/QH15, promulgation date 2025-12-10, and effective date 2026-03-01.",
   },
   {
     id: "vn-digital-tech-industry-2025",
@@ -522,19 +551,20 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     bindingStatus: "binding",
     aiSpecific: true,
     status: "In force",
-    dateAdopted: "2025-06-01",
+    dateAdopted: "2025-06-14",
+    dateInForce: "2026-01-01",
     regulatorOrBody: "Ministry of Information and Communications",
     summary:
       "Earlier risk-based framework on the digital technology industry that includes AI provisions. Largely superseded by the Law on AI for AI-specific obligations.",
     frontierAIRelevant: true,
-    sourceName: "Vietnam National Assembly — Law on Digital Technology Industry",
-    sourceUrl: "https://quochoi.vn/Pages/dien-dan-truc-tuyen.aspx",
+    sourceName: "Vietnam Government Portal - Law 71/2025/QH15",
+    sourceUrl: "https://vanban.chinhphu.vn/?classid=1&docid=214609&pageid=27160&typegroupid=3",
     sourceKind: "official",
-    verificationStatus: "uncertain",
-    confidence: "low",
-    lastVerified: "2026-05-20",
+    verificationStatus: "verified",
+    confidence: "high",
+    lastVerified: "2026-05-27",
     verificationNotes:
-      "Generic source URL; needs direct official law text/status verification.",
+      "Government legal database record confirms Law 71/2025/QH15, promulgation date 2025-06-14, and general effective date 2026-01-01; selected provisions entered into force earlier.",
   },
   {
     id: "tw-ai-basic-act-2025",
@@ -546,19 +576,19 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     aiSpecific: true,
     status: "In force",
     dateAdopted: "2025-12-23",
-    dateInForce: "2026-01-01",
+    dateInForce: "2026-01-14",
     regulatorOrBody: "Ministry of Digital Affairs; National Science and Technology Council",
     summary:
       "Foundational statute providing Taiwan's human-centered AI governance framework. Consolidates the AI Action Plan 2.0 priorities (talent, software and chips, international links, regulatory environment, industrial transformation) into binding form.",
     frontierAIRelevant: true,
-    sourceName: "Taiwan Ministry of Digital Affairs — AI Fundamental Act",
-    sourceUrl: "https://moda.gov.tw/en/press/press-releases",
+    sourceName: "Taiwan NSTC - Artificial Intelligence Basic Act",
+    sourceUrl: "https://law.nstc.gov.tw/EngLawContent.aspx?id=10099&kwStr=&lan=E",
     sourceKind: "official",
-    verificationStatus: "uncertain",
-    confidence: "low",
-    lastVerified: "2026-05-20",
+    verificationStatus: "verified",
+    confidence: "high",
+    lastVerified: "2026-05-27",
     verificationNotes:
-      "Source URL is a generic press-release index rather than a direct act record; verify the legal text, status, and dates before relying on map coloring.",
+      "MODA confirms Legislative Yuan passage on 2025-12-23; NSTC legal database confirms promulgation on 2026-01-14 and provides the full act text.",
   },
   {
     id: "it-law-132-2025",
@@ -588,19 +618,20 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     bindingStatus: "binding",
     aiSpecific: true,
     status: "In force",
-    dateAdopted: "2025-07-01",
+    dateAdopted: "2025-10-23",
+    dateInForce: "2025-11-21",
     regulatorOrBody: "Ministry of Digital Transformation",
     summary:
       "National implementation of the EU AI Act. Mandates public-sector publication of high-risk AI systems and establishes regulatory sandboxes under supervised conditions.",
     frontierAIRelevant: true,
-    sourceName: "Government of Slovenia — Digital Transformation",
-    sourceUrl: "https://www.gov.si/en/state-authorities/ministries/ministry-of-digital-transformation/",
+    sourceName: "PISRS - ZIUDHPUI",
+    sourceUrl: "https://pisrs.si/pregledPredpisa?id=ZAKO9225",
     sourceKind: "official",
-    verificationStatus: "uncertain",
-    confidence: "low",
-    lastVerified: "2026-05-20",
+    verificationStatus: "verified",
+    confidence: "high",
+    lastVerified: "2026-05-27",
     verificationNotes:
-      "Source URL is a ministry landing page rather than a direct law or official gazette record; verify before treating as confirmed national implementation law.",
+      "PISRS record confirms adoption on 2025-10-23, publication in Official Gazette RS 85/25, and validity/application from 2025-11-21.",
   },
   {
     id: "us-take-it-down-act-2025",
@@ -641,6 +672,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: true,
     sourceName: "Islamic Consultative Assembly — Seventh Five-Year Development Plan",
     sourceUrl: "https://rc.majlis.ir/fa/law/show/1809128",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "ru-experimental-ai-regime-2020",
@@ -658,6 +690,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: false,
     sourceName: "Russia — Federal Law 123-FZ",
     sourceUrl: "http://publication.pravo.gov.ru/Document/View/0001202004240030",
+    ...OFFICIAL_NEEDS_CHECK,
   },
 
   // ===== Proposed AI laws =====
@@ -675,8 +708,9 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     summary:
       "Standalone AI statute identifying offences for manipulating content without consent, punishable by fines and imprisonment. Requires ministers to establish sector-specific regulations.",
     frontierAIRelevant: true,
-    sourceName: "Shura Council — Proposed AI Law",
-    sourceUrl: "https://perma.cc/PBY7-CD94",
+    sourceName: "The Daily Tribune — Bahrain Shura Council approves AI bill",
+    sourceUrl: "https://www.newsofbahrain.com/bahrain/98717.html",
+    ...SECONDARY_NEEDS_CHECK,
   },
   {
     id: "br-ai-bill-2338",
@@ -694,6 +728,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: true,
     sourceName: "Federal Senate of Brazil — PL 2338/2023",
     sourceUrl: "https://www25.senado.leg.br/web/atividade/materias/-/materia/157233",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "cr-bill-23919-responsible-ai",
@@ -710,7 +745,9 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
       "Most advanced of four AI-related bills before the Costa Rican legislature. Establishes a national framework for responsible AI development and use.",
     frontierAIRelevant: false,
     sourceName: "Costa Rica Legislative Assembly — Expediente 23919",
-    sourceUrl: "https://www.asamblea.go.cr/Centro_de_informacion/Consultas_SIL/SitePages/ConsultaProyectos.aspx",
+    sourceUrl:
+      "https://www.asamblea.go.cr/Centro_de_informacion/Consultas_SIL/Pginas/Detalle%20Proyectos%20de%20Ley.aspx?Numero_Proyecto=23919",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "tr-ai-law-draft",
@@ -727,7 +764,10 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
       "Risk-based AI bill covering AI developers, distributors, users, and importers in Türkiye. Mandates risk assessment and compliance mechanisms for high-risk AI systems (healthcare, transportation, law enforcement).",
     frontierAIRelevant: true,
     sourceName: "Grand National Assembly of Türkiye — Draft AI Law",
-    sourceUrl: "https://www2.tbmm.gov.tr/d27/2/2-1882.pdf",
+    sourceUrl: "https://www.tbmm.gov.tr/Yasama/KanunTeklifi/e21539a0-888a-4500-81be-01904a918c53",
+    ...OFFICIAL_NEEDS_CHECK,
+    verificationNotes:
+      "Official TBMM bill page confirms the proposal record; legal status and bill text details still need Turkish-language review before upgrading confidence.",
   },
   {
     id: "do-ai-bill-2025",
@@ -743,8 +783,9 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     summary:
       "Proposes the National Council for Artificial Intelligence (CONIA) with oversight over the AI lifecycle. Prohibits use of AI for military, defence, or national security purposes.",
     frontierAIRelevant: false,
-    sourceName: "Chamber of Deputies of the Dominican Republic — Legislative System",
-    sourceUrl: "https://s-sil.camaradediputados.gob.do:8095/",
+    sourceName: "Diario de Todos — report on Dominican Republic AI bill",
+    sourceUrl: "https://diariodetodos.do/inteligencia-artificial/ley-regularia-aplicacion-de-inteligencia-artificial/",
+    ...SECONDARY_NEEDS_CHECK,
   },
   {
     id: "mx-federal-ai-law-proposed",
@@ -762,6 +803,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: false,
     sourceName: "Gaceta Parlamentaria — Mexico AI constitutional reform initiative",
     sourceUrl: "https://sil.gobernacion.gob.mx/",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "pl-ai-systems-act-draft",
@@ -779,6 +821,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: true,
     sourceName: "Ministry of Digital Affairs of Poland — AI",
     sourceUrl: "https://www.gov.pl/web/ai",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "uk-ai-regulation-bill-2025",
@@ -796,6 +839,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: true,
     sourceName: "UK Parliament — Artificial Intelligence (Regulation) Bill",
     sourceUrl: "https://bills.parliament.uk/bills/4126",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "no-ai-act-draft-2025",
@@ -811,8 +855,9 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     summary:
       "Norwegian draft AI Act to implement the EU AI Act within the EEA framework. Data protection authority called for a prohibition on remote biometric identification as part of the law.",
     frontierAIRelevant: true,
-    sourceName: "Government of Norway — Digitalisation",
-    sourceUrl: "https://www.regjeringen.no/en/dep/dfd/id3033696/",
+    sourceName: "Government of Norway — consultation on Artificial Intelligence Act",
+    sourceUrl: "https://www.regjeringen.no/id3112327/",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "es-ai-law-draft-2025",
@@ -828,8 +873,12 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     summary:
       "Spain's national implementation of the EU AI Act, operationalising the Spanish Agency for the Supervision of AI (AESIA).",
     frontierAIRelevant: true,
-    sourceName: "Ministry for Digital Transformation of Spain",
-    sourceUrl: "https://portal.mineco.gob.es/en-us/digitalizacionIA/Paginas/inteligencia-artificial.aspx",
+    sourceName: "La Moncloa — Council of Ministers reference",
+    sourceUrl:
+      "https://www.lamoncloa.gob.es/consejodeministros/referencias/paginas/2025/20250311-referencia-rueda-de-prensa-ministros.aspx",
+    ...OFFICIAL_NEEDS_CHECK,
+    verificationNotes:
+      "Official Council of Ministers reference confirms approval of the preliminary draft on 2025-03-11; verify later parliamentary status separately because the public snapshot date is 2026-05-19.",
   },
 
   // ===== Major national AI strategies / frameworks =====
@@ -849,6 +898,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: false,
     sourceName: "OECD OPSI — Argentina National AI Strategy",
     sourceUrl: "https://oecd-opsi.org/wp-content/uploads/2021/02/Argentina-National-AI-Strategy.pdf",
+    ...SECONDARY_NEEDS_CHECK,
   },
   {
     id: "at-aim-at-2030",
@@ -867,6 +917,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     sourceName: "European Commission — Austria AI strategy",
     sourceUrl:
       "https://digital-skills-jobs.europa.eu/sites/default/files/2023-10/Artificial%20Intelligence%20Mission%20Austria%202030_AIM_AT_2030.pdf",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "az-ai-strategy-2025-2028",
@@ -884,6 +935,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: false,
     sourceName: "Innovation and Digital Development Agency of Azerbaijan",
     sourceUrl: "https://idda.az/en/news/artificial-intelligence-strategy-approved-what-expect",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "bd-national-ai-strategy",
@@ -901,6 +953,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: false,
     sourceName: "ICT Division, Government of Bangladesh",
     sourceUrl: "https://ictd.gov.bd/",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "de-national-ai-strategy",
@@ -919,6 +972,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     sourceName: "Federal Government of Germany — KI Strategie",
     sourceUrl:
       "https://www.ki-strategie-deutschland.de/files/downloads/Fortschreibung_KI-Strategie_engl.pdf",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "es-enia",
@@ -937,6 +991,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     sourceName: "Ministry of Economy of Spain — National Strategy on AI",
     sourceUrl:
       "https://portal.mineco.gob.es/RecursosArticulo/mineco/ministerio/ficheros/National-Strategy-on-AI.pdf",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "fi-ai-programme",
@@ -955,6 +1010,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     sourceName: "Government of Finland — AI Programme",
     sourceUrl:
       "https://julkaisut.valtioneuvosto.fi/bitstream/handle/10024/160391/TEMrap_47_2017_verkkojulkais.pdf",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "fr-ai-for-humanity",
@@ -972,6 +1028,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: true,
     sourceName: "Ministère de l'Économie — Stratégie nationale pour l'IA",
     sourceUrl: "https://www.economie.gouv.fr/actualites/strategie-nationale-intelligence-artificielle",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "id-strategi-nasional-ai",
@@ -989,6 +1046,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: false,
     sourceName: "BPPT / BRIN — Stranas Kecerdasan Artifisial",
     sourceUrl: "https://ai-innovation.id/",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "il-national-ai-program-2024",
@@ -1006,6 +1064,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: true,
     sourceName: "Government of Israel — National AI Program",
     sourceUrl: "https://www.gov.il/en/departments/news/national-ai-program",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "it-strategic-programme-ai",
@@ -1023,6 +1082,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: true,
     sourceName: "Agency for Digital Italy — Italian AI Strategy 2024–2026",
     sourceUrl: "https://www.agid.gov.it/it/agenzia/stampa-e-comunicazione/notizie/strategia-italiana-intelligenza-artificiale-2024-2026",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "jm-ai-policy-recommendations-2025",
@@ -1038,8 +1098,9 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     summary:
       "Roadmap for legal, ethical, and social structures to guide AI development for the benefit of Jamaicans. Complemented by UNESCO Readiness Assessment Methodology (RAM) report.",
     frontierAIRelevant: false,
-    sourceName: "Government of Jamaica — AI Policy Recommendations",
-    sourceUrl: "https://opm.gov.jm/news/jamaica-takes-major-step-forward-on-ai-policy-with-national-ai-task-force-report/",
+    sourceName: "Office of the Prime Minister of Jamaica — National AI Task Force report",
+    sourceUrl: "https://opm.gov.jm/national-ai-task-force-report-published/",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "ke-national-ai-strategy-2025",
@@ -1057,6 +1118,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: false,
     sourceName: "Ministry of ICT, Kenya — National AI Strategy",
     sourceUrl: "https://ict.go.ke/sites/default/files/2025-03/Kenya%20AI%20Strategy%202025%20-%202030.pdf",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "nl-strategic-action-plan-ai",
@@ -1072,9 +1134,10 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     summary:
       "Three-theme action plan: public-private partnerships, societal and economic opportunities, and protection of human rights and fundamental values.",
     frontierAIRelevant: true,
-    sourceName: "Government of the Netherlands — Strategic Action Plan for AI",
+    sourceName: "Government of the Netherlands — Government-wide vision on generative AI",
     sourceUrl:
-      "https://www.government.nl/documents/policy-notes/2019/09/13/strategic-action-plan-artificial-intelligence",
+      "https://www.government.nl/documents/2024/01/17/government-wide-vision-on-generative-ai-of-the-netherlands",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "no-national-ai-strategy-2020",
@@ -1093,6 +1156,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     sourceName: "Government of Norway — National AI Strategy",
     sourceUrl:
       "https://www.regjeringen.no/contentassets/1febbbb2c4fd4b7d92c67ddd353b6ae8/en-gb/pdfs/ki-strategi_en.pdf",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "om-national-ai-policy-2025",
@@ -1110,6 +1174,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: false,
     sourceName: "Government of Oman — Ministry of Transport, Communications and IT",
     sourceUrl: "https://www.mtcit.gov.om/",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "pl-ai-development-policy",
@@ -1128,6 +1193,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     sourceName: "Ministry of Digital Affairs of Poland — AI Policy",
     sourceUrl:
       "https://www.gov.pl/web/ai/polityka-dla-rozwoju-sztucznej-inteligencji-w-polsce-od-roku-2020",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "ru-ai-development-strategy",
@@ -1145,6 +1211,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: true,
     sourceName: "Government of Russia — National AI Strategy through 2030",
     sourceUrl: "http://static.kremlin.ru/media/events/files/ru/AH4x6HgKWANwVtMOfPDhcbRpvd1HCCsv.pdf",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "za-national-ai-policy-framework-2024",
@@ -1162,6 +1229,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: false,
     sourceName: "Department of Communications and Digital Technologies, South Africa",
     sourceUrl: "https://www.dcdt.gov.za/",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "th-national-ai-strategy",
@@ -1179,6 +1247,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: false,
     sourceName: "AI Thailand — National AI Strategy",
     sourceUrl: "https://ai.in.th/",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "gh-national-ai-strategy-2025",
@@ -1189,13 +1258,20 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     bindingStatus: "non_binding",
     aiSpecific: true,
     status: "Launched; in implementation",
-    dateAdopted: "2025-06-01",
+    dateAdopted: "2026-04-24",
     regulatorOrBody: "Ministry of Communication, Digital Technology and Innovations",
     summary:
       "Eight-pillar national AI strategy: education and skills, data governance, digital infrastructure, applied research, sectoral AI adoption, ecosystem coordination, youth employment, and public-sector innovation. Aligned with the UNESCO AI Ethics Recommendation.",
     frontierAIRelevant: false,
-    sourceName: "Government of Ghana — Ministry of Communication, Digital Technology and Innovations",
-    sourceUrl: "https://www.moc.gov.gh/",
+    sourceName: "Ghana Ministry of Communication, Digital Technology and Innovations — National AI Strategy launch",
+    sourceUrl:
+      "https://moc.gov.gh/2026/04/24/ghana-launches-national-ai-strategy-to-drive-digital-transformation-and-economic-growth/",
+    ...OFFICIAL_NEEDS_CHECK,
+    verificationStatus: "verified",
+    confidence: "high",
+    lastVerified: "2026-05-27",
+    verificationNotes:
+      "Official ministry release confirms Ghana launched the National Artificial Intelligence Strategy on 2026-04-24.",
   },
   {
     id: "sa-sdaia-ai-strategy",
@@ -1213,6 +1289,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: true,
     sourceName: "Saudi Data and AI Authority (SDAIA)",
     sourceUrl: "https://sdaia.gov.sa/en/SDAIA/about/Pages/AboutNationalStrategy.aspx",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "ae-national-ai-strategy-2031",
@@ -1230,6 +1307,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: true,
     sourceName: "U.AE — UAE National Strategy for AI 2031",
     sourceUrl: "https://ai.gov.ae/strategy/",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "ma-maroc-ia-2030",
@@ -1247,6 +1325,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: false,
     sourceName: "Government of Morocco — Digital Transition",
     sourceUrl: "https://www.mtnra.gov.ma/",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "my-ai-rmap",
@@ -1264,6 +1343,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: false,
     sourceName: "Ministry of Science, Technology and Innovation, Malaysia — AI-Rmap",
     sourceUrl: "https://www.mosti.gov.my/",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "sn-national-ai-strategy",
@@ -1281,6 +1361,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: false,
     sourceName: "Ministry of Communication and Digital, Senegal",
     sourceUrl: "https://numerique.gouv.sn/",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "rw-national-ai-policy",
@@ -1298,6 +1379,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: false,
     sourceName: "Ministry of ICT and Innovation, Rwanda — National AI Policy",
     sourceUrl: "https://www.minict.gov.rw/policies",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "sk-national-ai-strategy",
@@ -1315,24 +1397,30 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: false,
     sourceName: "Government of Slovakia — Ministry of Investments, Regional Development and Informatisation",
     sourceUrl: "https://www.mirri.gov.sk/sekcie/informatizacia/umela-inteligencia/",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "se-ai-strategy",
-    name: "Sweden — National Approach to AI",
+    name: "Sweden's AI Strategy",
     jurisdiction: "Sweden",
     countryIso3: "SWE",
     type: "strategy",
     bindingStatus: "non_binding",
     aiSpecific: true,
-    status: "In implementation; Digitalisation Strategy 2025–2030 launched",
-    dateAdopted: "2018-05-17",
+    status: "Published; action plan in implementation",
+    dateAdopted: "2026-02-25",
     regulatorOrBody: "Government Offices of Sweden",
     summary:
-      "National approach focused on innovation, ethical standards, research competitiveness, and integration of AI in Sweden's digitalisation strategy. Updated 2025–2030.",
+      "National AI strategy and action plan focused on top-ten AI competitiveness, public-sector adoption, skills, research, security, and responsible use.",
     frontierAIRelevant: false,
-    sourceName: "Government Offices of Sweden — National Approach to AI",
-    sourceUrl:
-      "https://www.government.se/49b758/contentassets/fe2ba005fb49433587574c513a837fac/national-approach-to-artificial-intelligence.pdf",
+    sourceName: "Government Offices of Sweden — Sweden's AI Strategy",
+    sourceUrl: "https://www.government.se/information-material/2026/02/swedens-ai-strategy/",
+    ...OFFICIAL_NEEDS_CHECK,
+    verificationStatus: "verified",
+    confidence: "high",
+    lastVerified: "2026-05-27",
+    verificationNotes:
+      "Official Government Offices page confirms Sweden's AI Strategy was published on 2026-02-25 with an accompanying action plan.",
   },
   {
     id: "ch-ai-strategy",
@@ -1348,8 +1436,14 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     summary:
       "Federal guidelines on AI focused on responsible innovation, human-centred AI, and Switzerland's participation in international AI governance.",
     frontierAIRelevant: false,
-    sourceName: "Federal Council of Switzerland — Guidelines on AI",
-    sourceUrl: "https://www.bakom.admin.ch/bakom/en/homepage/digital-switzerland-and-internet/strategie-digitale-schweiz/leitlinien.html",
+    sourceName: "Swiss Federal Office of Communications — AI guidelines",
+    sourceUrl: "https://www.bakom.admin.ch/en/ai-guidelines",
+    ...OFFICIAL_NEEDS_CHECK,
+    verificationStatus: "verified",
+    confidence: "high",
+    lastVerified: "2026-05-27",
+    verificationNotes:
+      "Official OFCOM page confirms the Federal Council's November 2020 AI guidelines and their non-binding role for the Confederation.",
   },
   {
     id: "nz-algorithm-charter",
@@ -1367,6 +1461,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: false,
     sourceName: "Stats NZ — Algorithm Charter for Aotearoa",
     sourceUrl: "https://www.data.govt.nz/leadership/algorithm-hub/algorithm-charter/",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "eg-national-ai-strategy",
@@ -1384,6 +1479,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: false,
     sourceName: "Ministry of Communications and Information Technology of Egypt",
     sourceUrl: "https://mcit.gov.eg/en/Artificial_Intelligence",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "ng-national-ai-strategy",
@@ -1401,6 +1497,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: false,
     sourceName: "Federal Ministry of Communications, Innovation & Digital Economy, Nigeria",
     sourceUrl: "https://fmcide.gov.ng/",
+    ...OFFICIAL_NEEDS_CHECK,
   },
   {
     id: "mu-national-ai-strategy",
@@ -1418,6 +1515,7 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: false,
     sourceName: "Ministry of Information Technology, Communication and Innovation, Mauritius",
     sourceUrl: "https://mitci.govmu.org/",
+    ...OFFICIAL_NEEDS_CHECK,
   },
 ];
 
