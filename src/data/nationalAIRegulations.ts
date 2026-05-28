@@ -94,7 +94,10 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: true,
     sourceName: "CAC — Interim Measures for Generative AI Services",
     sourceUrl: "https://www.cac.gov.cn/2023-07/13/c_1690898327029107.htm",
-    ...OFFICIAL_LIKELY,
+    ...OFFICIAL_VERIFIED,
+    lastVerified: "2026-05-28",
+    verificationNotes:
+      "Official CAC source confirms the generative-AI service measures, promulgation on 2023-07-13, and 2023-08-15 effective date.",
   },
   {
     id: "cn-deep-synthesis",
@@ -113,7 +116,10 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: true,
     sourceName: "CAC — Deep Synthesis provisions",
     sourceUrl: "https://www.cac.gov.cn/2022-12/11/c_1672221949354811.htm",
-    ...OFFICIAL_LIKELY,
+    ...OFFICIAL_VERIFIED,
+    lastVerified: "2026-05-28",
+    verificationNotes:
+      "Official CAC source confirms the deep-synthesis provisions, 2022-11-25 adoption, and 2023-01-10 effective date.",
   },
   {
     id: "cn-algorithm-recommendation",
@@ -132,7 +138,10 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: false,
     sourceName: "CAC — Algorithmic Recommendation provisions",
     sourceUrl: "https://www.cac.gov.cn/2022-01/04/c_1642894606364259.htm",
-    ...OFFICIAL_LIKELY,
+    ...OFFICIAL_VERIFIED,
+    lastVerified: "2026-05-28",
+    verificationNotes:
+      "Official CAC source confirms the algorithmic-recommendation provisions and 2022-03-01 effective date.",
   },
   {
     id: "cn-ai-content-labeling",
@@ -509,13 +518,16 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     summary:
       "Comprehensive horizontal AI statute with high/medium/low risk categories. Prohibits AI for behavioural manipulation, social scoring, and certain biometric classifications; sets transparency, security, and accountability duties for owners, possessors, and users of AI systems.",
     frontierAIRelevant: true,
-    sourceName: "Government of Kazakhstan — Order implementing the AI Law",
+    sourceName: "Kazakhstan Adilet — Law On Artificial Intelligence",
     sourceUrl:
-      "https://adilet.zan.kz/eng/docs/Z2500000241",
+      "https://adilet.zan.kz/rus/docs/Z2500000230",
     notes: "Accompanied by amendments to existing laws to support AI governance.",
-    ...OFFICIAL_LIKELY,
+    sourceKind: "official",
+    verificationStatus: "verified",
+    confidence: "high",
+    lastVerified: "2026-05-28",
     verificationNotes:
-      "Official legal database URL exists in dataset; detailed English/official status still needs a targeted legal-text verification pass.",
+      "Official Adilet legal database record confirms the Law of the Republic of Kazakhstan dated 2025-11-17 No. 230-VIII ZRK, titled 'On Artificial Intelligence', with Article 31 providing entry into force after official publication.",
   },
   {
     id: "vn-ai-law-2025",
@@ -607,7 +619,10 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: true,
     sourceName: "Gazzetta Ufficiale — Law 132/2025",
     sourceUrl: "https://www.gazzettaufficiale.it/eli/id/2025/09/25/25G00143/sg",
-    ...OFFICIAL_LIKELY,
+    ...OFFICIAL_VERIFIED,
+    lastVerified: "2026-05-28",
+    verificationNotes:
+      "Gazzetta Ufficiale ELI metadata confirms Law 132/2025, document date 2025-09-23, publication date 2025-09-25, title on artificial intelligence, and entry into force on 2025-10-10.",
   },
   {
     id: "si-eu-ai-act-implementation-2025",
@@ -661,18 +676,23 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     name: "Seventh Five-Year Development Plan Law — Article 65(c) (AI provisions)",
     jurisdiction: "Iran",
     countryIso3: "IRN",
-    type: "law",
-    bindingStatus: "binding",
+    type: "institutional_framework",
+    bindingStatus: "non_binding",
     aiSpecific: true,
-    status: "In force",
+    status: "In force as a broad development-plan mandate; not a standalone AI law",
     dateAdopted: "2024-07-08",
     regulatorOrBody: "AI Task Force; Supreme Council of Cyberspace",
     summary:
-      "Statutory mandate requiring the Government to implement a National AI Development Programme, including legal, technical, ethical and social infrastructure. AI Task Force prepared the National AI Development plan draft (Aug 2025) for public consultation.",
+      "Broad development-plan mandate requiring the Government to implement a National AI Development Programme, including legal, technical, ethical and social infrastructure. Kept as AI-governance context, not as a standalone binding AI-specific regulatory law for map coloring.",
     frontierAIRelevant: true,
     sourceName: "Islamic Consultative Assembly — Seventh Five-Year Development Plan",
     sourceUrl: "https://rc.majlis.ir/fa/law/show/1809128",
-    ...OFFICIAL_NEEDS_CHECK,
+    sourceKind: "official",
+    verificationStatus: "uncertain",
+    confidence: "low",
+    lastVerified: "2026-05-28",
+    verificationNotes:
+      "Official Majlis source is protected by an anti-bot challenge during automated review. Searchable text supports an AI programme mandate in Article 65(c), but the record should not drive binding-law map coloring until a direct official text review is completed.",
   },
   {
     id: "ru-experimental-ai-regime-2020",
@@ -690,7 +710,12 @@ export const NATIONAL_AI_REGULATIONS: NationalAIRegulation[] = [
     frontierAIRelevant: false,
     sourceName: "Russia — Federal Law 123-FZ",
     sourceUrl: "http://publication.pravo.gov.ru/Document/View/0001202004240030",
-    ...OFFICIAL_NEEDS_CHECK,
+    sourceKind: "official",
+    verificationStatus: "verified",
+    confidence: "high",
+    lastVerified: "2026-05-28",
+    verificationNotes:
+      "Official publication portal confirms Federal Law No. 123-FZ dated and published 2020-04-24 on the AI experimental legal regime in Moscow.",
   },
 
   // ===== Proposed AI laws =====
