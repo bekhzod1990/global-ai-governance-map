@@ -52,6 +52,8 @@ The dashboard answers a deceptively simple question — *"how is frontier AI act
 
 It is **client-only**: a static Vite build, no backend, no paid APIs, no user accounts. Everything ships as JavaScript + JSON + an SVG world map. Deployment is a single `vercel deploy` from the project root, and the live site auto-rebuilds on every push to `main`.
 
+The Geography and Layers maps support in-page maximize mode, region focus presets, zoom, pan, and reset controls so researchers can move from a full-world overview to a readable regional view without leaving the dashboard.
+
 A guided **"Take the tour"** walkthrough runs new visitors through a five-step narrative: ① Who builds frontier AI? → ② Who can actually stop them? → ③ International coordinators → ④ Evaluations & standards → ⑤ Compute & chips.
 
 ## What's on the map
@@ -71,8 +73,8 @@ Out-of-scope items (GDPR, DPDP, generic cybersecurity, BIS/Wassenaar/JP-NL-US ex
 
 | Lens | What it does | Implementation |
 |---|---|---|
-| **Geography** | Default world map. Country fill = binding status of national AI rule. Frontier-lab HQ pins overlaid, sized by power score. | `WorldMap.tsx` + `LabPin.tsx`, Equal Earth projection via `react-simple-maps` |
-| **Layers** | Recolours countries by the highest governance layer present (corporate / national binding / proposed / voluntary / international only). | `getMapColor.ts → pickPrimaryLayer` (cached) |
+| **Geography** | Default world map. Country fill = binding status of national AI rule. Frontier-lab HQ pins overlaid, sized by power score. Includes maximize, zoom/pan, and regional focus controls. | `WorldMap.tsx` + `LabPin.tsx`, Equal Earth projection via `react-simple-maps` |
+| **Layers** | Recolours countries by the highest governance layer present (corporate / national binding / proposed / voluntary / international only). Shares the same maximize, zoom/pan, and focus controls. | `getMapColor.ts → pickPrimaryLayer` (cached) |
 | **Network** | Force-directed graph of every actor and edge. Node size = power score, edge thickness = strength. Click highlights 1-hop neighbours. | `NetworkView.tsx`, `d3-force` 300-tick static layout |
 | **Timeline** | 115+ AI governance milestones plotted from 2017 (Finland AI Programme) → 2026 (Kazakhstan AI Law, Taiwan AI Basic Act, Vietnam AI Law). Filterable by international / national / subnational. | `TimelineView.tsx` |
 | **Table** | Sortable, filterable research table for countries, instruments, national rules, labs, participation rows, and source metadata; supports CSV export. | `TableView.tsx` |

@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, useEffect } from "react";
-import { geoEqualEarth, geoPath, type GeoPermissibleObjects } from "d3-geo";
+import { geoEqualEarth, geoPath, type GeoPermissibleObjects, type GeoProjection } from "d3-geo";
 import { ComposableMap, Geographies, Geography, Sphere, Graticule } from "react-simple-maps";
 import type { ProjectionFunction } from "react-simple-maps";
 import { feature } from "topojson-client";
@@ -45,6 +45,8 @@ interface Props {
   showLabs: boolean;
   lens: LensKind;
   scaleBoost?: number;
+  mapCenter?: [number, number];
+  mapZoom?: number;
 }
 
 export function WorldMap({
@@ -58,9 +60,23 @@ export function WorldMap({
   showLabs,
   lens,
   scaleBoost = 1,
+  mapCenter,
+  mapZoom = 1,
 }: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    origin: [number, number];
+    moved: boolean;
+  } | null>(null);
+  const suppressClickRef = useRef(false);
   const [dims, setDims] = useState({ width: 1200, height: 700 });
+  const [panState, setPanState] = useState<{ key: string; offset: [number, number] }>({
+    key: "",
+    offset: [0, 0],
+  });
 
   useEffect(() => {
     const el = wrapperRef.current;
@@ -81,7 +97,7 @@ export function WorldMap({
     return map;
   }, [filters]);
 
-  const projection = useMemo(() => {
+  const projection = useMemo<GeoProjection>(() => {
     const [[x0, y0], [x1, y1]] = BASE_COUNTRY_BOUNDS;
     const boundedWidth = x1 - x0;
     const boundedHeight = y1 - y0;
@@ -98,125 +114,206 @@ export function WorldMap({
       .translate([
         dims.width / 2 - ((x0 + x1) / 2) * scale,
         MAP_TOP_PADDING - y0 * scale,
-      ]) as unknown as ProjectionFunction;
+      ]);
   }, [dims.width, dims.height, scaleBoost]);
+
+  const projectedCountryBounds = useMemo(
+    () => geoPath(projection).bounds(FITTED_COUNTRY_FEATURES),
+    [projection]
+  );
+
+  const baseMapTransform = useMemo(() => {
+    const focusPoint = mapCenter
+      ? projection(mapCenter)
+      : [
+          (projectedCountryBounds[0][0] + projectedCountryBounds[1][0]) / 2,
+          (projectedCountryBounds[0][1] + projectedCountryBounds[1][1]) / 2,
+        ];
+    if (!focusPoint) return { x: 0, y: 0, k: mapZoom };
+
+    const targetPoint = mapCenter
+      ? [dims.width / 2, dims.height / 2]
+      : focusPoint;
+
+    return {
+      x: targetPoint[0] - focusPoint[0] * mapZoom,
+      y: targetPoint[1] - focusPoint[1] * mapZoom,
+      k: mapZoom,
+    };
+  }, [dims.height, dims.width, mapCenter, mapZoom, projectedCountryBounds, projection]);
+
+  const panKey = `${baseMapTransform.x}:${baseMapTransform.y}:${baseMapTransform.k}`;
+  const panOffset = panState.key === panKey ? panState.offset : ([0, 0] as [number, number]);
+
+  const appliedMapTransform = {
+    x: baseMapTransform.x + panOffset[0],
+    y: baseMapTransform.y + panOffset[1],
+    k: baseMapTransform.k,
+  };
+
+  function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.button !== 0) return;
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      origin: panOffset,
+      moved: false,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+    drag.moved = true;
+    suppressClickRef.current = true;
+    setPanState({ key: panKey, offset: [drag.origin[0] + dx, drag.origin[1] + dy] });
+  }
+
+  function endPointerDrag(event: React.PointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    dragRef.current = null;
+    event.currentTarget.releasePointerCapture(event.pointerId);
+    window.setTimeout(() => {
+      suppressClickRef.current = false;
+    }, 0);
+  }
 
   return (
     <div
       ref={wrapperRef}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={endPointerDrag}
+      onPointerCancel={endPointerDrag}
       className="relative h-full w-full overflow-hidden bg-canvas-surface"
     >
       <ComposableMap
-        projection={projection}
+        projection={projection as unknown as ProjectionFunction}
         width={dims.width}
         height={dims.height}
         style={{ width: "100%", height: "100%" }}
       >
-        <Sphere id="globe-sphere" stroke="#E2E8F0" strokeWidth={0.5} fill="#F8FAFC" />
-        <Graticule stroke="#E2E8F0" strokeWidth={0.4} step={[20, 20]} />
-        <Geographies geography={GEO_DATA}>
-          {({ geographies }) =>
-            geographies.map((geo) => {
-              const numericId = (geo.id as string) ?? geo.properties?.id;
-              const iso3 = numericToAlpha3(numericId);
-              if (iso3 === "ATA") return null;
-              if (!iso3 || !COUNTRY_BY_ISO3[iso3]) {
+        <g
+          transform={`translate(${appliedMapTransform.x} ${appliedMapTransform.y}) scale(${appliedMapTransform.k})`}
+        >
+          <Sphere id="globe-sphere" stroke="#E2E8F0" strokeWidth={0.5} fill="#F8FAFC" />
+          <Graticule stroke="#E2E8F0" strokeWidth={0.4} step={[20, 20]} />
+          <Geographies geography={GEO_DATA}>
+            {({ geographies }) =>
+              geographies.map((geo) => {
+                const numericId = (geo.id as string) ?? geo.properties?.id;
+                const iso3 = numericToAlpha3(numericId);
+                if (iso3 === "ATA") return null;
+                if (!iso3 || !COUNTRY_BY_ISO3[iso3]) {
+                  return (
+                    <Geography
+                      key={geo.rsmKey}
+                      geography={geo}
+                      style={{
+                        default: { fill: "#E5E7EB", stroke: "#CBD5E1", strokeWidth: 0.4, outline: "none" },
+                        hover: { fill: "#E5E7EB", outline: "none" },
+                        pressed: { fill: "#E5E7EB", outline: "none" },
+                      }}
+                    />
+                  );
+                }
+
+                const matches = matchByIso[iso3] ?? true;
+                const style = getMapStyle(iso3, filters, matches, lens);
+                const isSelected = selectedIso3 === iso3;
+                const hoverFill = adjustColor(style.fill, -10);
+
                 return (
                   <Geography
                     key={geo.rsmKey}
                     geography={geo}
+                    onClick={() => {
+                      if (suppressClickRef.current) return;
+                      onSelectCountry(iso3);
+                    }}
+                    onKeyDown={(event) => activateOnKeyboard(event, () => onSelectCountry(iso3))}
+                    onMouseEnter={(e) => {
+                      onHover({
+                        iso3,
+                        name: COUNTRY_BY_ISO3[iso3].name,
+                        x: e.clientX,
+                        y: e.clientY,
+                      });
+                    }}
+                    onMouseMove={(e) => {
+                      onHover({
+                        iso3,
+                        name: COUNTRY_BY_ISO3[iso3].name,
+                        x: e.clientX,
+                        y: e.clientY,
+                      });
+                    }}
+                    onMouseLeave={() => onHover(null)}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${COUNTRY_BY_ISO3[iso3].name} - open country details`}
                     style={{
-                      default: { fill: "#E5E7EB", stroke: "#CBD5E1", strokeWidth: 0.4, outline: "none" },
-                      hover: { fill: "#E5E7EB", outline: "none" },
-                      pressed: { fill: "#E5E7EB", outline: "none" },
+                      default: {
+                        fill: style.fill,
+                        stroke: isSelected ? "#0F172A" : style.outline,
+                        strokeWidth: isSelected ? 1.5 : style.strokeWidth,
+                        strokeDasharray: style.strokeDasharray,
+                        opacity: style.opacity,
+                        outline: "none",
+                        cursor: "pointer",
+                        transition: "fill 120ms ease-out, opacity 120ms ease-out",
+                      },
+                      hover: {
+                        fill: hoverFill,
+                        stroke: "#0F172A",
+                        strokeWidth: 1.2,
+                        opacity: 1,
+                        outline: "none",
+                        cursor: "pointer",
+                      },
+                      pressed: {
+                        fill: hoverFill,
+                        stroke: "#0F172A",
+                        strokeWidth: 1.5,
+                        outline: "none",
+                      },
                     }}
                   />
                 );
-              }
+              })
+            }
+          </Geographies>
 
-              const matches = matchByIso[iso3] ?? true;
-              const style = getMapStyle(iso3, filters, matches, lens);
-              const isSelected = selectedIso3 === iso3;
-              const hoverFill = adjustColor(style.fill, -10);
-
+          {showLabs &&
+            FRONTIER_LABS.map((lab) => {
+              const dimmed =
+                filters.selectedLabIds.length > 0 &&
+                !filters.selectedLabIds.includes(lab.id);
               return (
-                <Geography
-                  key={geo.rsmKey}
-                  geography={geo}
-                  onClick={() => onSelectCountry(iso3)}
-                  onKeyDown={(event) => activateOnKeyboard(event, () => onSelectCountry(iso3))}
-                  onMouseEnter={(e) => {
-                    onHover({
-                      iso3,
-                      name: COUNTRY_BY_ISO3[iso3].name,
-                      x: e.clientX,
-                      y: e.clientY,
-                    });
+                <LabPin
+                  key={lab.id}
+                  lab={lab}
+                  selected={selectedLabId === lab.id}
+                  dimmed={dimmed}
+                  onClick={(id) => {
+                    if (suppressClickRef.current) return;
+                    onSelectLab(id);
                   }}
-                  onMouseMove={(e) => {
-                    onHover({
-                      iso3,
-                      name: COUNTRY_BY_ISO3[iso3].name,
-                      x: e.clientX,
-                      y: e.clientY,
-                    });
-                  }}
-                  onMouseLeave={() => onHover(null)}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`${COUNTRY_BY_ISO3[iso3].name} - open country details`}
-                  style={{
-                    default: {
-                      fill: style.fill,
-                      stroke: isSelected ? "#0F172A" : style.outline,
-                      strokeWidth: isSelected ? 1.5 : style.strokeWidth,
-                      strokeDasharray: style.strokeDasharray,
-                      opacity: style.opacity,
-                      outline: "none",
-                      cursor: "pointer",
-                      transition: "fill 120ms ease-out, opacity 120ms ease-out",
-                    },
-                    hover: {
-                      fill: hoverFill,
-                      stroke: "#0F172A",
-                      strokeWidth: 1.2,
-                      opacity: 1,
-                      outline: "none",
-                      cursor: "pointer",
-                    },
-                    pressed: {
-                      fill: hoverFill,
-                      stroke: "#0F172A",
-                      strokeWidth: 1.5,
-                      outline: "none",
-                    },
+                  onHover={(l, e) => {
+                    if (!onHoverLab) return;
+                    if (l && e) onHoverLab({ lab: l, x: e.clientX, y: e.clientY });
+                    else onHoverLab(null);
                   }}
                 />
               );
-            })
-          }
-        </Geographies>
-
-        {showLabs &&
-          FRONTIER_LABS.map((lab) => {
-            const dimmed =
-              filters.selectedLabIds.length > 0 &&
-              !filters.selectedLabIds.includes(lab.id);
-            return (
-              <LabPin
-                key={lab.id}
-                lab={lab}
-                selected={selectedLabId === lab.id}
-                dimmed={dimmed}
-                onClick={onSelectLab}
-                onHover={(l, e) => {
-                  if (!onHoverLab) return;
-                  if (l && e) onHoverLab({ lab: l, x: e.clientX, y: e.clientY });
-                  else onHoverLab(null);
-                }}
-              />
-            );
-          })}
+            })}
+        </g>
       </ComposableMap>
     </div>
   );

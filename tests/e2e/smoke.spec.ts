@@ -44,6 +44,13 @@ test.describe("governance map smoke flows", () => {
   test("supports in-page map maximize mode", async ({ page }) => {
     await page.goto("/");
 
+    await page.getByLabel("Map focus").selectOption("europe");
+    await expect(page.getByLabel("Map focus")).toHaveValue("europe");
+    await page.getByRole("button", { name: "Zoom map in" }).click();
+    await expect(page.getByLabel("Map focus")).toHaveValue("custom");
+    await page.getByRole("button", { name: "Reset map view" }).click();
+    await expect(page.getByLabel("Map focus")).toHaveValue("world");
+
     await page.getByRole("button", { name: "Maximize map" }).click();
     await expect(page.getByRole("button", { name: "Exit maximize" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Global AI Governance Map" })).toHaveCount(0);

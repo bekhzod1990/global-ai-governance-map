@@ -36,6 +36,30 @@ const NetworkView = lazy(() => import("./components/NetworkView").then((m) => ({
 const TimelineView = lazy(() => import("./components/TimelineView").then((m) => ({ default: m.TimelineView })));
 const TableView = lazy(() => import("./components/TableView").then((m) => ({ default: m.TableView })));
 
+type MapFocusId = "world" | "americas" | "europe" | "africa_mena" | "asia_pacific";
+type MapViewState = {
+  focusId: MapFocusId | "custom";
+  center?: [number, number];
+  zoom: number;
+};
+
+const MAP_ZOOM_MIN = 1;
+const MAP_ZOOM_MAX = 4;
+const MAP_ZOOM_STEP = 0.35;
+const DEFAULT_MAP_VIEW: MapViewState = { focusId: "world", zoom: 1 };
+const MAP_FOCUS_OPTIONS: Array<{
+  id: MapFocusId;
+  label: string;
+  center?: [number, number];
+  zoom: number;
+}> = [
+  { id: "world", label: "World", zoom: 1 },
+  { id: "americas", label: "Americas", center: [-78, 18], zoom: 2.05 },
+  { id: "europe", label: "Europe", center: [15, 53], zoom: 3 },
+  { id: "africa_mena", label: "Africa/MENA", center: [22, 13], zoom: 2.15 },
+  { id: "asia_pacific", label: "Asia-Pacific", center: [108, 18], zoom: 2.05 },
+];
+
 function LensFallback() {
   return (
     <div className="flex h-full w-full items-center justify-center bg-canvas-surface text-xs text-ink-500">
@@ -100,6 +124,7 @@ export default function App() {
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
   const [showMethodology, setShowMethodology] = useState(false);
   const [isMapMaximized, setIsMapMaximized] = useState(false);
+  const [mapView, setMapView] = useState<MapViewState>(DEFAULT_MAP_VIEW);
 
   useEffect(() => {
     if (import.meta.env.VITE_SKIP_DEV_VALIDATION === "1") return;
@@ -122,6 +147,7 @@ export default function App() {
       setTimelineLane(next.timelineLane);
       setActivePresetId(null);
       setIsMapMaximized(false);
+      setMapView(DEFAULT_MAP_VIEW);
     }
 
     window.addEventListener("popstate", handlePopState);
@@ -236,6 +262,28 @@ export default function App() {
     setActivePresetId(preset.id);
   }
 
+  function handleMapFocusChange(focusId: string) {
+    const nextFocus = MAP_FOCUS_OPTIONS.find((option) => option.id === focusId);
+    if (!nextFocus) return;
+    setMapView({
+      focusId: nextFocus.id,
+      center: nextFocus.center,
+      zoom: nextFocus.zoom,
+    });
+  }
+
+  function handleMapZoom(delta: number) {
+    setMapView((current) => ({
+      ...current,
+      focusId: "custom",
+      zoom: clamp(current.zoom + delta, MAP_ZOOM_MIN, MAP_ZOOM_MAX),
+    }));
+  }
+
+  function handleMapReset() {
+    setMapView(DEFAULT_MAP_VIEW);
+  }
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-canvas">
       <a
@@ -317,6 +365,8 @@ export default function App() {
             showLabs={showLabs}
             lens={lens}
             scaleBoost={mapChromeHidden ? 1.08 : 1}
+            mapCenter={mapView.center}
+            mapZoom={mapView.zoom}
           />
         )}
         {lens === "network" && (
@@ -355,11 +405,63 @@ export default function App() {
         )}
 
         {showsMap && (
+          <div className="absolute left-2 top-2 z-20 flex max-w-[calc(100%-8.5rem)] items-center gap-1 rounded-lg border border-canvas-line bg-white/90 p-1 shadow-panel backdrop-blur sm:left-4 sm:top-3 sm:max-w-none">
+            <label htmlFor="map-focus-select" className="sr-only">
+              Map focus
+            </label>
+            <select
+              id="map-focus-select"
+              aria-label="Map focus"
+              value={mapView.focusId}
+              onChange={(event) => handleMapFocusChange(event.target.value)}
+              className="h-8 max-w-28 rounded-md border border-canvas-line bg-white px-2 text-xs font-medium text-ink-800 outline-none hover:border-ink-400 focus:border-accent focus:ring-2 focus:ring-accent/20 sm:max-w-40"
+            >
+              {mapView.focusId === "custom" && <option value="custom">Custom</option>}
+              {MAP_FOCUS_OPTIONS.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => handleMapZoom(-MAP_ZOOM_STEP)}
+              disabled={mapView.zoom <= MAP_ZOOM_MIN}
+              aria-label="Zoom map out"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-canvas-line bg-white text-sm font-semibold text-ink-800 hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              -
+            </button>
+            <span className="hidden min-w-10 text-center text-[11px] font-semibold text-ink-500 sm:inline">
+              {mapView.zoom.toFixed(1)}x
+            </span>
+            <button
+              type="button"
+              onClick={() => handleMapZoom(MAP_ZOOM_STEP)}
+              disabled={mapView.zoom >= MAP_ZOOM_MAX}
+              aria-label="Zoom map in"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-canvas-line bg-white text-sm font-semibold text-ink-800 hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              onClick={handleMapReset}
+              aria-label="Reset map view"
+              className="inline-flex h-8 items-center justify-center rounded-md border border-canvas-line bg-white px-2 text-[11px] font-semibold text-ink-700 hover:border-accent hover:text-accent"
+            >
+              Reset
+            </button>
+          </div>
+        )}
+
+        {showsMap && (
           <button
             type="button"
             onClick={() => setIsMapMaximized((next) => !next)}
+            aria-label={mapChromeHidden ? "Exit maximize" : "Maximize map"}
             aria-pressed={mapChromeHidden}
-            className="absolute right-4 top-3 z-20 inline-flex items-center gap-1.5 rounded-md border border-canvas-line bg-white/90 px-2.5 py-1.5 text-xs font-semibold text-ink-800 shadow-panel backdrop-blur hover:border-accent hover:text-accent"
+            className="absolute right-2 top-2 z-20 inline-flex h-10 items-center gap-1.5 rounded-md border border-canvas-line bg-white/90 px-2.5 text-xs font-semibold text-ink-800 shadow-panel backdrop-blur hover:border-accent hover:text-accent sm:right-4 sm:top-3 sm:h-auto sm:py-1.5"
           >
             <svg
               aria-hidden="true"
@@ -388,7 +490,8 @@ export default function App() {
                 </>
               )}
             </svg>
-            {mapChromeHidden ? "Exit maximize" : "Maximize map"}
+            <span className="hidden sm:inline">{mapChromeHidden ? "Exit maximize" : "Maximize map"}</span>
+            <span className="sm:hidden">{mapChromeHidden ? "Exit" : "Max"}</span>
           </button>
         )}
 
@@ -478,4 +581,8 @@ export default function App() {
       <SpeedInsights />
     </div>
   );
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, Number(value.toFixed(2))));
 }
