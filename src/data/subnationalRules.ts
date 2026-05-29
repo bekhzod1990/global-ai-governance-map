@@ -10,11 +10,11 @@ const VERIFIED_OFFICIAL_SOURCE = {
   "sourceKind" | "verificationStatus" | "confidence" | "lastVerified"
 >;
 
-const UNCERTAIN_OFFICIAL_SOURCE = {
+const REVIEWED_OFFICIAL_SOURCE = {
   sourceKind: "official",
-  verificationStatus: "uncertain",
-  confidence: "low",
-  lastVerified: "2026-05-20",
+  verificationStatus: "likely_correct",
+  confidence: "medium",
+  lastVerified: "2026-05-29",
 } satisfies Pick<
   SubnationalAIRule,
   "sourceKind" | "verificationStatus" | "confidence" | "lastVerified"
@@ -85,9 +85,9 @@ export const SUBNATIONAL_AI_RULES: SubnationalAIRule[] = [
   {
     id: "us-ca-2025-ai-package",
     name: "California 2025 AI legislative activity package",
-    ...UNCERTAIN_OFFICIAL_SOURCE,
+    ...REVIEWED_OFFICIAL_SOURCE,
     verificationNotes:
-      "Original package-count claim was not verified against a single official source; retain only as a representative package marker pending a specific bill-by-bill source.",
+      "Official Governor source confirms SB 53 and related California AI legislative activity. This remains a representative package marker, not a single codified act, and is not counted as binding law.",
     countryIso3: "USA",
     jurisdictionName: "California",
     jurisdictionType: "us_state",
@@ -125,29 +125,29 @@ export const SUBNATIONAL_AI_RULES: SubnationalAIRule[] = [
   // ===== EU member-state implementations (in addition to Italy & Slovenia already in nationalAIRegulations) =====
   {
     id: "fr-ai-act-implementation-draft",
-    name: "France — draft EU AI Act implementation",
-    ...UNCERTAIN_OFFICIAL_SOURCE,
+    name: "France - EU AI Act implementation activity",
+    ...REVIEWED_OFFICIAL_SOURCE,
     verificationNotes:
-      "Current URL is a general French AI strategy page rather than a specific implementation bill or competent-authority act; needs targeted legal-source follow-up.",
+      "Official CNIL annual-report source supports French EU AI Act implementation activity and CNIL's AI-governance role. The record has been softened because this source does not establish a comprehensive national implementation act.",
     countryIso3: "FRA",
     jurisdictionName: "France",
     jurisdictionType: "eu_member",
-    type: "proposed_law",
-    bindingStatus: "proposed",
+    type: "framework",
+    bindingStatus: "non_binding",
     aiSpecific: true,
-    status: "Draft; competent-authority designation in progress",
+    status: "Implementation activity; specific national act not tracked",
     dateAdopted: "2025-06-01",
     summary:
-      "French national implementation of the EU AI Act. CNIL designated as lead authority for high-risk AI; sectoral regulators coordinate via ARCOM, ACPR, and others.",
-    sourceName: "République Française — AI Act implementation",
-    sourceUrl: "https://www.economie.gouv.fr/actualites/strategie-nationale-intelligence-artificielle",
+      "French EU AI Act implementation activity, including CNIL's AI governance and supervisory work. This entry is not treated as a national AI Act or binding implementation law until a specific official act is added.",
+    sourceName: "CNIL - Annual Report 2025",
+    sourceUrl: "https://www.cnil.fr/sites/default/files/2026-05/rapport_annuel_2025.pdf",
   },
   {
     id: "de-ai-act-implementation-draft",
-    name: "Germany — draft EU AI Act implementation",
-    ...UNCERTAIN_OFFICIAL_SOURCE,
+    name: "Germany - draft EU AI Act implementation",
+    ...REVIEWED_OFFICIAL_SOURCE,
     verificationNotes:
-      "Current URL is a ministry homepage rather than the specific implementation draft; BNetzA designation claim needs targeted legal-source follow-up.",
+      "Official Bundestag release supports a 2025 draft implementation bill and BNetzA's proposed central role. Keep as proposed/draft until the act is promulgated.",
     countryIso3: "DEU",
     jurisdictionName: "Germany",
     jurisdictionType: "eu_member",
@@ -158,8 +158,8 @@ export const SUBNATIONAL_AI_RULES: SubnationalAIRule[] = [
     dateAdopted: "2025-04-01",
     summary:
       "German implementation of the EU AI Act. BNetzA (Federal Network Agency) proposed as central market surveillance authority; sectoral coordination with BSI and BaFin.",
-    sourceName: "Federal Ministry of Research, Technology and Space",
-    sourceUrl: "https://www.bmftr.bund.de/",
+    sourceName: "German Bundestag - EU AI Act implementation bill",
+    sourceUrl: "https://www.bundestag.de/presse/hib/kurzmeldungen-1155112",
   },
 ];
 

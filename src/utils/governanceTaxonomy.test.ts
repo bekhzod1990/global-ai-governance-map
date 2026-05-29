@@ -66,7 +66,7 @@ describe("governance taxonomy", () => {
     expect(NATIONAL_REG_BY_ID["ca-aida-proposed"].status).toContain("Historical proposal");
     expect(NATIONAL_REG_BY_ID["us-take-it-down-act-2025"].frontierAIRelevant).toBe(false);
     expect(SUBNATIONAL_BY_ID["us-ca-2025-ai-package"].bindingStatus).toBe("non_binding");
-    expect(SUBNATIONAL_BY_ID["us-ca-2025-ai-package"].verificationStatus).toBe("uncertain");
+    expect(SUBNATIONAL_BY_ID["us-ca-2025-ai-package"].verificationStatus).toBe("likely_correct");
   });
 
   it("uses the official INASI launch-member list", () => {
