@@ -27,7 +27,7 @@ These fields are optional during migration, but `npm run validate:data` reports 
 - The in-app Data menu exports the exact static arrays bundled into the client build.
 - The export uses schema version `2026.05` and the project snapshot date, not the browser download date.
 - Keep the export helper in `src/utils/exportDataset.ts` aligned with any new data file so public JSON exports do not silently omit a dataset category.
-- The citation download is intentionally short; long methodology and verification notes belong in this document and `docs/SOURCE_VERIFICATION_2026-05-20.md`.
+- The citation download is intentionally short; the release package, methodology, and verification notes live in `docs/RELEASE_2026-05.md`, this document, and the `docs/SOURCE_VERIFICATION_*.md` files.
 
 ## Taxonomy Rules
 

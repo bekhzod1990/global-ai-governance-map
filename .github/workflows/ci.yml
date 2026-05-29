@@ -40,8 +40,11 @@ jobs:
       - name: Validate dataset export
         run: npm run validate:export
 
-      - name: Audit source freshness and links
-        run: npm run audit:sources -- --output=source-audit-report.md --json-output=source-audit-report.json --check-links --fail-on-metadata-warnings
+      - name: Audit source metadata
+        run: npm run audit:sources -- --output=source-audit-report.md --json-output=source-audit-report.json --fail-on-metadata-warnings
+
+      - name: Audit source links (warning-only)
+        run: npm run audit:source-links -- --output=source-link-audit-report.md --json-output=source-link-audit-report.json
 
       - name: Upload source audit report
         if: always()
@@ -51,6 +54,8 @@ jobs:
           path: |
             source-audit-report.md
             source-audit-report.json
+            source-link-audit-report.md
+            source-link-audit-report.json
 
       - name: Build editorial data review report
         run: npm run audit:data-review -- --output=data-review-report.md --json-output=data-review-report.json

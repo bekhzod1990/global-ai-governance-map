@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildSourceAuditData, extractSourceRecordsFromText } from "./audit-sources.mjs";
+import {
+  buildSourceAuditData,
+  describeFetchError,
+  extractSourceRecordsFromText,
+} from "./audit-sources.mjs";
 
 describe("source audit extraction", () => {
   it("uses nested source metadata without losing the parent id", () => {
@@ -77,5 +81,12 @@ rows.push(
     );
     expect(report.metadataWarnings).toEqual([]);
     expect(report.metadataWarningCount).toBe(0);
+  });
+
+  it("describes common automated link-check failures in editorial language", () => {
+    expect(describeFetchError(new DOMException("Timeout", "AbortError"))).toContain(
+      "timed out"
+    );
+    expect(describeFetchError(new TypeError("fetch failed"))).toContain("anti-bot");
   });
 });

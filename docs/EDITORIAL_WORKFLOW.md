@@ -71,6 +71,10 @@ The automated data-review report flags:
 
 Automated link checks are editorial aids. Some official sites block scripts even when a browser works. Do not downgrade a legal/source claim solely because an automated link check timed out.
 
+If a source is manually verified but repeatedly fails scripted link checks, add a narrowly scoped entry to `src/data/sourceLinkManualChecks.json` with the record id, URL, manual status, check date, and reason. These exceptions keep CI and the source-audit report honest: they are visible in the audit output, but they do not create public warning badges or weaken the underlying source metadata.
+
+If most source URLs fail at once with network or timeout errors, treat the link audit as inconclusive for that runtime and rerun it from CI or another unrestricted network.
+
 ## Pull Request Checklist
 
 - The source is official, or the record explains why a secondary source is only a lead.

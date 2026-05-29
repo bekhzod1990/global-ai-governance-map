@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dataDir = path.join(root, "src", "data");
 const sourceHostConfigPath = path.join(dataDir, "sourceHosts.json");
+const sourceLinkManualChecksPath = path.join(dataDir, "sourceLinkManualChecks.json");
 const args = new Map(
   process.argv.slice(2).map((arg) => {
     const [key, value = "true"] = arg.replace(/^--/, "").split("=");
@@ -13,8 +14,16 @@ const args = new Map(
 );
 
 const sourceHostConfig = JSON.parse(await fs.readFile(sourceHostConfigPath, "utf8"));
+const sourceLinkManualCheckConfig = JSON.parse(await fs.readFile(sourceLinkManualChecksPath, "utf8"));
 const OFFICIAL_HOSTS = new Set(sourceHostConfig.officialHosts);
 const OFFICIAL_SUFFIXES = sourceHostConfig.officialHostSuffixes;
+const MANUAL_LINK_CHECKS = sourceLinkManualCheckConfig.manualChecks ?? [];
+const MANUAL_LINK_CHECKS_BY_RECORD_AND_URL = new Map(
+  MANUAL_LINK_CHECKS.map((check) => [`${check.recordId}::${check.sourceUrl}`, check])
+);
+const MANUAL_LINK_CHECKS_BY_URL = new Map(
+  MANUAL_LINK_CHECKS.map((check) => [check.sourceUrl, check])
+);
 
 const now = new Date();
 
@@ -31,6 +40,9 @@ if (isCli()) {
   }
   console.log(report);
   if (args.has("fail-on-metadata-warnings") && data.metadataWarnings.length > 0) {
+    process.exitCode = 1;
+  }
+  if (args.has("fail-on-link-warnings") && data.linkWarnings.length > 0) {
     process.exitCode = 1;
   }
 }
@@ -69,17 +81,23 @@ export async function buildSourceAuditData({ checkLinks = false } = {}) {
     }
   }
 
-  const linkWarnings = checkLinks ? await checkLinksForRecords(records) : [];
+  const linkCheckResults = checkLinks
+    ? await checkLinksForRecords(records)
+    : { warnings: [], manualChecks: [], environmentWarnings: [] };
 
   return {
     generatedAt: now.toISOString(),
     recordCount: records.length,
     checkLinks,
     metadataWarningCount: warnings.length,
-    linkWarningCount: linkWarnings.length,
+    linkWarningCount: linkCheckResults.warnings.length,
+    manualLinkCheckCount: linkCheckResults.manualChecks.length,
+    linkEnvironmentWarningCount: linkCheckResults.environmentWarnings.length,
     records,
     metadataWarnings: warnings,
-    linkWarnings,
+    linkWarnings: linkCheckResults.warnings,
+    manualLinkChecks: linkCheckResults.manualChecks,
+    linkEnvironmentWarnings: linkCheckResults.environmentWarnings,
   };
 }
 
@@ -91,6 +109,8 @@ function formatSourceAuditMarkdown(data) {
     `Records with sourceUrl: ${data.recordCount}`,
     `Metadata warnings: ${data.metadataWarningCount}`,
     `Link warnings: ${data.linkWarningCount}`,
+    `Manual link checks: ${data.manualLinkCheckCount ?? 0}`,
+    `Link environment warnings: ${data.linkEnvironmentWarningCount ?? 0}`,
     "",
     "## Metadata Warnings",
     data.metadataWarnings.length
@@ -101,6 +121,16 @@ function formatSourceAuditMarkdown(data) {
     data.linkWarnings.length
       ? data.linkWarnings.map((item) => `- ${formatWarning(item)}`).join("\n")
       : "No link warnings, or link checks were not requested.",
+    "",
+    "## Link Environment Warnings",
+    data.linkEnvironmentWarnings?.length
+      ? data.linkEnvironmentWarnings.map((item) => `- ${item.message}`).join("\n")
+      : "No link environment warnings.",
+    "",
+    "## Manual Link Checks",
+    data.manualLinkChecks?.length
+      ? data.manualLinkChecks.map((item) => `- ${formatManualLinkCheck(item)}`).join("\n")
+      : "No manual link-check exceptions used.",
     "",
   ].join("\n");
 }
@@ -273,16 +303,39 @@ function formatWarning(warning) {
 async function checkLinksForRecords(sourceRecords) {
   const unique = [...new Map(sourceRecords.map((record) => [record.sourceUrl, record])).values()];
   const warnings = [];
+  const manualChecks = [];
   let index = 0;
   const workers = Array.from({ length: 3 }, async () => {
     while (index < unique.length) {
       const record = unique[index++];
       const result = await checkLink(record.sourceUrl);
-      if (result) warnings.push(warn(record, result));
+      if (!result) continue;
+      const manualCheck = getManualLinkCheck(record);
+      if (manualCheck) {
+        manualChecks.push(manualLinkCheck(record, manualCheck, result));
+      } else {
+        warnings.push(warn(record, result));
+      }
     }
   });
   await Promise.all(workers);
-  return warnings.sort();
+  const environmentWarnings = detectLinkCheckEnvironmentWarnings(
+    unique.length,
+    warnings,
+    manualChecks
+  );
+  if (environmentWarnings.length) {
+    return {
+      warnings: [],
+      manualChecks: sortWarnings(manualChecks),
+      environmentWarnings,
+    };
+  }
+  return {
+    warnings: sortWarnings(warnings),
+    manualChecks: sortWarnings(manualChecks),
+    environmentWarnings: [],
+  };
 }
 
 function isCli() {
@@ -312,11 +365,74 @@ async function requestUrl(sourceUrl, method) {
     });
     if (response.status < 400 || response.status === 405 || response.status === 403) return null;
     if (method === "HEAD") return "retry";
-    return `source URL returned HTTP ${response.status}: ${sourceUrl}`;
+    return `source URL returned HTTP ${response.status} after ${method} request: ${sourceUrl}`;
   } catch (error) {
     if (method === "HEAD") return "retry";
-    return `source URL check failed (${error instanceof Error ? error.name : "unknown"}): ${sourceUrl}`;
+    return `source URL check failed after HEAD-to-GET retry (${describeFetchError(error)}): ${sourceUrl}`;
   } finally {
     clearTimeout(timeout);
   }
+}
+
+function getManualLinkCheck(record) {
+  return (
+    MANUAL_LINK_CHECKS_BY_RECORD_AND_URL.get(`${record.id}::${record.sourceUrl}`) ??
+    MANUAL_LINK_CHECKS_BY_URL.get(record.sourceUrl) ??
+    null
+  );
+}
+
+function manualLinkCheck(record, check, automatedResult) {
+  return {
+    file: record.file,
+    id: record.id,
+    name: record.name,
+    sourceUrl: record.sourceUrl,
+    status: check.status,
+    lastChecked: check.lastChecked,
+    reason: check.reason,
+    automatedResult,
+  };
+}
+
+function sortWarnings(items) {
+  return items.sort((a, b) =>
+    `${a.file}::${a.id}::${a.sourceUrl}`.localeCompare(`${b.file}::${b.id}::${b.sourceUrl}`)
+  );
+}
+
+function detectLinkCheckEnvironmentWarnings(recordCount, warnings, manualChecks) {
+  const failures = [
+    ...warnings.map((item) => item.message),
+    ...manualChecks.map((item) => item.automatedResult),
+  ];
+  if (recordCount === 0 || failures.length / recordCount < 0.5) return [];
+  if (!failures.every(isNetworkEnvironmentFailure)) return [];
+  return [
+    {
+      message:
+        `Link check inconclusive: ${failures.length} of ${recordCount} automated requests failed with network or timeout errors. ` +
+        "This usually means the current runtime cannot reach external source sites; rerun from CI or another unrestricted network before treating links as broken.",
+    },
+  ];
+}
+
+function isNetworkEnvironmentFailure(message) {
+  return (
+    message.includes("network, TLS, redirect, or anti-bot fetch failure") ||
+    message.includes("request timed out or was aborted")
+  );
+}
+
+function formatManualLinkCheck(item) {
+  return `${item.file} :: ${item.id} :: ${item.status} checked ${item.lastChecked} - ${item.reason} Automated result: ${item.automatedResult}`;
+}
+
+export function describeFetchError(error) {
+  if (!error || typeof error !== "object") return "unknown fetch failure";
+  const name = "name" in error ? String(error.name) : "unknown";
+  const message = "message" in error ? String(error.message) : "";
+  if (name === "AbortError") return "request timed out or was aborted";
+  if (name === "TypeError") return "network, TLS, redirect, or anti-bot fetch failure";
+  return message ? `${name}: ${message}` : name;
 }

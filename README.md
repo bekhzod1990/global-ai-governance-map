@@ -424,6 +424,12 @@ Use the templates in [`docs/templates/`](docs/templates/) before adding or corre
 
 Public correction reports can also use the GitHub issue form in [`.github/ISSUE_TEMPLATE/data-correction.yml`](.github/ISSUE_TEMPLATE/data-correction.yml).
 
+Release and audit references:
+
+- [May 2026 dataset release package](docs/RELEASE_2026-05.md)
+- [Current source audit](docs/SOURCE_AUDIT_CURRENT.md)
+- [Changelog](docs/CHANGELOG.md)
+
 ## Source rules
 
 Official sources are preferred:
@@ -446,19 +452,24 @@ Secondary sources are used only to discover leads, never as the authoritative fi
 ```bash
 npm run validate:data
 npm run audit:sources
-npm run audit:sources -- --check-links
+npm run audit:source-links
 npm run audit:sources -- --output=source-audit-report.md --json-output=source-audit-report.json
+npm run audit:source-links -- --output=source-link-audit-report.md --json-output=source-link-audit-report.json
 npm run audit:data-review
 npm run audit:data-review -- --output=data-review-report.md --json-output=data-review-report.json
 ```
 
-`audit:sources -- --check-links` is an editorial aid, not a public UI signal. Some official
+`audit:source-links` is an editorial aid, not a public UI signal. Some official
 government and standards sites reject scripted `HEAD`/`GET` checks or time out even when a
-human browser can open them, so unresolved link-check warnings should be manually spot-checked
-before changing a record's legal/source status.
+human browser can open them. Known cases live in
+[`src/data/sourceLinkManualChecks.json`](src/data/sourceLinkManualChecks.json); the audit report
+separates true link warnings from manual-check exceptions. Do not downgrade a record's legal/source
+status solely because an official site blocks automation.
 
-CI uploads both Markdown and JSON source-audit artifacts. Metadata warnings fail CI; link
-warnings remain non-failing because automated checks can be blocked by official sites.
+CI uploads Markdown and JSON artifacts for source metadata, source links, and editorial review.
+Metadata warnings fail CI; link warnings remain non-failing unless a maintainer explicitly runs
+`--fail-on-link-warnings`. If a runtime cannot reach most external source sites, the link audit
+reports a link-environment warning instead of flooding the report with false broken-link warnings.
 
 CI also uploads Markdown and JSON editorial data-review artifacts. These are warning-first
 review aids for source freshness, low-confidence records, uncertain status, and strong
