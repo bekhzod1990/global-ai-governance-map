@@ -91,6 +91,7 @@ export function WorldMap({
     startY: number;
     origin: [number, number];
     moved: boolean;
+    captured: boolean;
   } | null>(null);
   const suppressClickRef = useRef(false);
   const [dims, setDims] = useState({ width: 1200, height: 700 });
@@ -212,8 +213,8 @@ export function WorldMap({
       startY: event.clientY,
       origin: panOffset,
       moved: false,
+      captured: false,
     };
-    event.currentTarget.setPointerCapture(event.pointerId);
   }
 
   function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
@@ -223,6 +224,10 @@ export function WorldMap({
     const dy = event.clientY - drag.startY;
     if (!drag.moved && Math.hypot(dx, dy) < 4) return;
     drag.moved = true;
+    if (!drag.captured) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+      drag.captured = true;
+    }
     suppressClickRef.current = true;
     setPanState({ key: panKey, offset: [drag.origin[0] + dx, drag.origin[1] + dy] });
   }
@@ -231,7 +236,9 @@ export function WorldMap({
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
     dragRef.current = null;
-    event.currentTarget.releasePointerCapture(event.pointerId);
+    if (drag.captured && event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
     window.setTimeout(() => {
       suppressClickRef.current = false;
     }, 0);
