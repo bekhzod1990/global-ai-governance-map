@@ -16,6 +16,7 @@ import { VerificationMeta } from "./VerificationMeta";
 import { CorrectionLink } from "./CorrectionLink";
 import { CopyTextButton } from "./CopyTextButton";
 import { PinCompareButton } from "./PinCompareButton";
+import { EvidenceDossierButton } from "./EvidenceDossierButton";
 import { buildRecordCitation } from "../utils/citation";
 
 interface Item {
@@ -141,6 +142,7 @@ export function InstrumentList({ items, onPinInstrument, isInstrumentPinned }: P
                       claim: instrument.summary,
                     })}
                   />
+                  <EvidenceDossierButton kind="instrument" id={instrument.id} compact />
                   <SourceLink
                     name={participation.sourceName}
                     url={participation.sourceUrl}

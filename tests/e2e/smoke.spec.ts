@@ -25,11 +25,30 @@ test.describe("governance map smoke flows", () => {
     await expect(australiaDrawer).toBeVisible();
     await expect(australiaDrawer.getByText("Research answer")).toBeVisible();
     await expect(australiaDrawer.getByRole("button", { name: "Copy citation" }).first()).toBeVisible();
+    await australiaDrawer.getByRole("button", { name: "Evidence dossier" }).click();
+    const countryDossier = page.getByRole("dialog", { name: "Australia evidence dossier" });
+    await expect(countryDossier).toBeVisible();
+    await expect(countryDossier.getByText("Answer summary")).toBeVisible();
+    await expect(countryDossier.getByRole("heading", { name: "Sources" })).toBeVisible();
+    await expect(countryDossier.getByRole("button", { name: "Copy Markdown" })).toBeVisible();
+    const dossierDownloadPromise = page.waitForEvent("download");
+    await countryDossier.getByRole("button", { name: "Download Markdown" }).click();
+    const dossierDownload = await dossierDownloadPromise;
+    expect(dossierDownload.suggestedFilename()).toBe("global-ai-governance-map-country-aus-evidence-dossier.md");
+    await countryDossier.getByRole("button", { name: "Close evidence dossier" }).click();
+    await expect(countryDossier).toBeHidden();
     await australiaDrawer.getByRole("button", { name: "Compare", exact: true }).click();
     await expect(australiaDrawer.getByRole("button", { name: "Pinned" }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "Comparison" })).toBeVisible();
     await expect(page.getByText(/1 pinned item/)).toBeVisible();
     await expect(page.getByRole("link", { name: "Report correction" }).first()).toBeVisible();
+
+    await australiaDrawer.getByRole("button", { name: /Bletchley Declaration/ }).click();
+    await australiaDrawer.getByRole("button", { name: "Dossier", exact: true }).click();
+    const instrumentDossier = page.getByRole("dialog", { name: /Bletchley Declaration evidence dossier/ });
+    await expect(instrumentDossier).toBeVisible();
+    await expect(instrumentDossier.getByText("Participation pattern")).toBeVisible();
+    await instrumentDossier.getByRole("button", { name: "Close evidence dossier" }).click();
   });
 
   test("supports the network node list and detail drawers", async ({ page }) => {
@@ -53,6 +72,16 @@ test.describe("governance map smoke flows", () => {
     await expect(openAiDrawer.getByText("ISO/IEC 42001:2023").first()).toBeVisible();
     await openAiDrawer.getByRole("button", { name: "Infrastructure" }).click();
     await expect(openAiDrawer.getByText("Advanced AI chips").first()).toBeVisible();
+    await openAiDrawer.getByRole("button", { name: "Evidence dossier" }).click();
+    const labDossier = page.getByRole("dialog", { name: "OpenAI evidence dossier" });
+    await expect(labDossier).toBeVisible();
+    await expect(labDossier.getByText("Regulatory exposure")).toBeVisible();
+    await expect(labDossier.getByText("Advanced AI chips").first()).toBeVisible();
+    await page.evaluate(() => {
+      window.print = () => undefined;
+    });
+    await labDossier.getByRole("button", { name: "Print / Save as PDF" }).click();
+    await labDossier.getByRole("button", { name: "Close evidence dossier" }).click();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog", { name: "OpenAI frontier-lab details" })).toBeHidden();
 

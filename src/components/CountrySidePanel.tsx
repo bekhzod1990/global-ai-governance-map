@@ -9,6 +9,7 @@ import { VerificationMeta } from "./VerificationMeta";
 import { CorrectionLink } from "./CorrectionLink";
 import { CopyTextButton } from "./CopyTextButton";
 import { PinCompareButton } from "./PinCompareButton";
+import { EvidenceDossierButton } from "./EvidenceDossierButton";
 import { buildCountryCitation, buildRecordCitation } from "../utils/citation";
 import { isConfirmedBindingNationalRegulation } from "../utils/governanceTaxonomy";
 
@@ -75,6 +76,7 @@ export function CountrySidePanel({
           <p className="mt-0.5 text-xs text-ink-500">ISO-3166 alpha-3 · {country.iso3}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <PinCompareButton pinned={isCountryPinned} onToggle={onPinCountry} />
+            <EvidenceDossierButton kind="country" id={country.iso3} />
             <CopyTextButton text={countryCitation} />
             <CorrectionLink
               recordKind="country"

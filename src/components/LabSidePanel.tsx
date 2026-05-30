@@ -7,6 +7,7 @@ import { VerificationMeta } from "./VerificationMeta";
 import { CorrectionLink } from "./CorrectionLink";
 import { CopyTextButton } from "./CopyTextButton";
 import { PinCompareButton } from "./PinCompareButton";
+import { EvidenceDossierButton } from "./EvidenceDossierButton";
 import { buildRecordCitation } from "../utils/citation";
 import {
   getLabExposureTarget,
@@ -55,6 +56,7 @@ export function LabSidePanel({ labId, onClose, onPinLab, isLabPinned }: Props) {
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <PinCompareButton pinned={isLabPinned} onToggle={onPinLab} />
+            <EvidenceDossierButton kind="lab" id={lab.id} />
             <CopyTextButton
               text={buildRecordCitation({
                 ...lab,

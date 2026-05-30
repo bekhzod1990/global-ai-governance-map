@@ -108,3 +108,24 @@ button {
 .policy-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
+
+@media print {
+  body.printing-evidence-dossier * {
+    visibility: hidden !important;
+  }
+
+  body.printing-evidence-dossier [data-evidence-dossier-print],
+  body.printing-evidence-dossier [data-evidence-dossier-print] * {
+    visibility: visible !important;
+  }
+
+  body.printing-evidence-dossier [data-evidence-dossier-print] {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    overflow: visible !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+}
