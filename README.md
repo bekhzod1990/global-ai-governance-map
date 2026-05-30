@@ -60,7 +60,7 @@ A guided **"Take the tour"** walkthrough runs new visitors through a five-step n
 ## What's on the map
 
 - **192 countries** (UN member states + key dependent territories) plus the European Union as a supranational entity.
-- **13 frontier-AI labs** pinned to their HQ cities — OpenAI, Anthropic, Google DeepMind, Meta, Microsoft, Amazon, xAI, Mistral, Cohere, DeepSeek, Baidu, Alibaba, Tencent — each with internal safety framework, FMF membership, and regulatory exposure.
+- **13 frontier-AI labs** pinned to their HQ cities — OpenAI, Anthropic, Google DeepMind, Meta, Microsoft, Amazon, xAI, Mistral, Cohere, DeepSeek, Baidu, Alibaba, Tencent — each with internal safety framework, FMF membership, and a typed regulatory-exposure workbench.
 - **33 international AI instruments** — UNESCO Recommendation, UNGA 78/265 + 78/311 + 79/325, Global Digital Compact, OECD AI Principles, G20 AI Principles, the G7 Hiroshima trio + reporting framework, EU AI Act, Council of Europe Framework Convention on AI, ISO/IEC 42001 / 23894 / 38507 / 22989 / 42005, the Bletchley → Seoul (×3) → Paris summit chain, INASI, ASEAN guides, AU Continental AI Strategy, APEC instruments, and key bilaterals (EU–US TTC roadmap, UK–US AISI MoU).
 - **75+ national AI-specific rules** across China, the EU, South Korea, UK, US, Japan, Singapore, Canada, Australia, India, plus binding statutes in **Kazakhstan, Vietnam, Taiwan, Italy, Slovenia**, draft bills in **Brazil, Türkiye, Mexico, Bahrain, Costa Rica, Dominican Republic, Poland, Norway, Spain**, and 30+ formal national AI strategies.
 - **7 subnational rules** — California SB 53 + 13-bill 2025 package, NYC Local Law 144, NY surveillance-pricing law, Illinois AIVIA, plus draft France/Germany EU AI Act implementations.
@@ -76,9 +76,9 @@ Out-of-scope items (GDPR, DPDP, generic cybersecurity, BIS/Wassenaar/JP-NL-US ex
 |---|---|---|
 | **Geography** | Default world map. Country fill = binding status of national AI rule. Frontier-lab HQ pins overlaid, sized by power score. Includes maximize, zoom/pan, and regional focus controls. | `WorldMap.tsx` + `LabPin.tsx`, Equal Earth projection via `react-simple-maps` |
 | **Layers** | Recolours countries by the highest governance layer present (corporate / national binding / proposed / voluntary / international only). Shares the same maximize, zoom/pan, and focus controls. | `getMapColor.ts → pickPrimaryLayer` (cached) |
-| **Network** | Force-directed graph of every actor and edge. Node size = power score, edge thickness = strength. Click highlights 1-hop neighbours. | `NetworkView.tsx`, `d3-force` 300-tick static layout |
+| **Network** | Force-directed graph of every actor and edge. Lab exposure edges are generated from the typed exposure dataset so binding, voluntary, standards, and infrastructure relationships stay distinct. | `NetworkView.tsx`, `d3-force` 300-tick static layout |
 | **Timeline** | 115+ AI governance milestones plotted from 2017 (Finland AI Programme) → 2026 (Kazakhstan AI Law, Taiwan AI Basic Act, Vietnam AI Law). Filterable by international / national / subnational. | `TimelineView.tsx` |
-| **Table** | Sortable, filterable research table for countries, instruments, national rules, labs, participation rows, and source metadata; supports CSV export. | `TableView.tsx` |
+| **Table** | Sortable, filterable research table for countries, instruments, national rules, labs, lab exposure rows, participation rows, and source metadata; supports CSV export. | `TableView.tsx` |
 
 ## Architecture
 
@@ -187,7 +187,8 @@ None of that is implemented today.
 src/data/
   countries.ts                  192 ISO-3166 alpha-3 entries + region tagging + helper member lists (OECD, G7, G20, APEC, ASEAN, AU, CoE)
   euMembers.ts                  27 EU member ISO3 codes — drives applicable_via_eu participation rows
-  frontierLabs.ts               13 labs + internal safety framework + FMF flag + regulatory exposure + power score
+  frontierLabs.ts               13 labs + internal safety framework + FMF flag + power score
+  labRegulatoryExposures.ts     typed lab exposure rows: binding, voluntary, standards, infrastructure, and indirect ecosystem claims
   infrastructure.ts             3 nodes: advanced AI chips, hyperscale cloud, U.S. BIS export controls
   internationalInstruments.ts   33 instruments with verificationMeta + canonical sources
   nationalAIRegulations.ts      75+ national AI rules with binding status + dates + regulator + source URL
@@ -223,7 +224,8 @@ See [`docs/DATA_GOVERNANCE.md`](docs/DATA_GOVERNANCE.md) for the dataset taxonom
 │   │   ├── WorldMap.tsx               Equal Earth SVG + country geographies + lab pins
 │   │   ├── NetworkView.tsx            d3-force static-layout graph
 │   │   ├── TimelineView.tsx           horizontal milestone timeline
-│   │   ├── LensSwitch.tsx             4-way lens toolbar
+│   │   ├── TableView.tsx              sortable/exportable research rows, including lab exposure
+│   │   ├── LensSwitch.tsx             5-way lens toolbar
 │   │   ├── Filters.tsx                Instrument / Participation / Binding force / Organization / Region / Frontier labs / National AI rules
 │   │   ├── CountrySidePanel.tsx       per-country drawer
 │   │   ├── LabSidePanel.tsx           per-lab drawer
@@ -233,11 +235,12 @@ See [`docs/DATA_GOVERNANCE.md`](docs/DATA_GOVERNANCE.md) for the dataset taxonom
 │   │   ├── SearchBox.tsx              fuzzy across countries / acts / instruments
 │   │   ├── VerificationMeta.tsx       per-item source verification chip (verified / likely / uncertain)
 │   │   ├── Legend / Tooltip / DataQualityNotice / EmptyState / SourceLink / ParticipationBadge / NationalRegulationList / InstrumentList / DeploymentBadge / LabPin
-│   ├── data/                          12 static data modules (see above)
+│   ├── data/                          13 static data modules (see above)
 │   ├── utils/                         memoised selectors, validation, export, search
 │   │   ├── filterCountries.ts                 LRU-cached filter matcher
 │   │   ├── getCountryGovernanceSummary.ts     per-iso3 joined view
 │   │   ├── getLabSummary.ts                   per-lab joined view
+│   │   ├── labExposure.ts                     labels, summaries, targets, graph edges
 │   │   ├── getEdgesForNode.ts                 grouped by relationship type
 │   │   ├── getMapColor.ts                     fill / outline / opacity per lens
 │   │   ├── getParticipationLabel.ts           label + description for badges

@@ -17,8 +17,10 @@ import { INFRASTRUCTURE_NODES } from "../data/infrastructure";
 import { INTERNATIONAL_INSTRUMENTS } from "../data/internationalInstruments";
 import { NATIONAL_AI_REGULATIONS } from "../data/nationalAIRegulations";
 import { DEPENDENCY_EDGES } from "../data/dependencies";
+import { LAB_REGULATORY_EXPOSURES } from "../data/labRegulatoryExposures";
 import type { GraphEdge, GraphNodeType, NetworkDensity, NetworkPresetId } from "../types";
 import { activateOnKeyboard } from "../utils/keyboardActivation";
+import { exposureMatchesNetworkPreset, getLabExposureGraphEdge } from "../utils/labExposure";
 
 type NodeKind = GraphNodeType;
 
@@ -100,7 +102,14 @@ export function NetworkView({
   const { nodes, links } = useMemo(() => {
     const involvedIds = new Set<string>();
     const minStrength = DENSITY_OPTIONS.find((option) => option.id === density)?.minStrength ?? 1;
-    const visibleEdges = DEPENDENCY_EDGES.filter(
+    const exposureEdges = LAB_REGULATORY_EXPOSURES.filter((exposure) =>
+      exposureMatchesNetworkPreset(exposure, preset)
+    ).map((exposure) => getLabExposureGraphEdge(exposure));
+    const candidateEdges = [
+      ...DEPENDENCY_EDGES.filter((edge) => !isLegacyLabExposureEdge(edge)),
+      ...exposureEdges,
+    ];
+    const visibleEdges = candidateEdges.filter(
       (edge) =>
         edge.strength >= minStrength &&
         edgeMatchesPreset(edge, preset) &&
@@ -459,6 +468,10 @@ function edgeMatchesPreset(edge: GraphEdge, preset: NetworkPresetId): boolean {
     return isSummitNode(edge.sourceId) || isSummitNode(edge.targetId);
   }
   return isStandardsNode(edge.sourceId) || isStandardsNode(edge.targetId);
+}
+
+function isLegacyLabExposureEdge(edge: GraphEdge): boolean {
+  return edge.sourceType === "lab" || edge.targetType === "lab";
 }
 
 function edgeHasFrontierRelevance(edge: GraphEdge): boolean {

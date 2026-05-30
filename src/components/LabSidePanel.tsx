@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { getLabSummary } from "../utils/getLabSummary";
 import { SourceLink } from "./SourceLink";
 import { ConnectionsSection } from "./ConnectionsSection";
@@ -7,6 +8,14 @@ import { CorrectionLink } from "./CorrectionLink";
 import { CopyTextButton } from "./CopyTextButton";
 import { PinCompareButton } from "./PinCompareButton";
 import { buildRecordCitation } from "../utils/citation";
+import {
+  getLabExposureTarget,
+  LAB_EXPOSURE_DIRECTNESS_LABELS,
+  LAB_EXPOSURE_EFFECT_LABELS,
+  LAB_EXPOSURE_KIND_LABELS,
+  LAB_EXPOSURE_TARGET_TYPE_LABELS,
+} from "../utils/labExposure";
+import type { LabExposureLegalEffect, LabRegulatoryExposure } from "../types";
 
 interface Props {
   labId: string;
@@ -16,8 +25,12 @@ interface Props {
 }
 
 export function LabSidePanel({ labId, onClose, onPinLab, isLabPinned }: Props) {
-  const { lab, regulatoryExposure } = getLabSummary(labId);
+  const { lab, regulatoryExposure, exposureSummary } = getLabSummary(labId);
   const dialogRef = useDialogFocus<HTMLElement>(onClose);
+  const [exposureFilter, setExposureFilter] = useState<ExposureFilter>("all");
+
+  const visibleExposure = filterExposure(regulatoryExposure, exposureFilter);
+  const groupedExposure = groupExposureByEffect(visibleExposure);
 
   if (!lab) return null;
 
@@ -133,37 +146,62 @@ export function LabSidePanel({ labId, onClose, onPinLab, isLabPinned }: Props) {
         )}
 
         <section className="mt-5">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-500">
-            Regulatory exposure
-          </h3>
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-500">
+              Regulatory exposure
+            </h3>
+            <p className="text-[11px] text-ink-500">
+              {visibleExposure.length} of {regulatoryExposure.length} rows
+            </p>
+          </div>
           {regulatoryExposure.length === 0 ? (
             <p className="text-xs text-ink-500">None recorded.</p>
           ) : (
-            <ul className="space-y-1.5">
-              {regulatoryExposure.map((r) => (
-                <li
-                  key={r.id}
-                  className="rounded-md border border-canvas-line bg-white px-3 py-2 text-xs text-ink-700"
-                >
-                  <p className="font-medium text-ink-900">{r.name}</p>
-                  {r.sourceUrl && (
-                    <div className="mt-1.5 space-y-1.5">
-                      <VerificationMeta item={r} compact />
-                      <div className="flex flex-wrap items-center gap-2">
-                        <SourceLink name="Source" url={r.sourceUrl} />
-                        <CorrectionLink
-                          recordKind="lab_regulatory_exposure"
-                          recordId={r.id}
-                          recordName={r.name}
-                          sourceUrl={r.sourceUrl}
-                          compact
-                        />
-                      </div>
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
+            <>
+              <div className="grid grid-cols-3 gap-2 rounded-xl border border-canvas-line bg-canvas/60 p-2 text-center text-xs">
+                <ExposureMetric label="Binding" value={exposureSummary.binding} strong={exposureSummary.binding > 0} />
+                <ExposureMetric label="Conditional" value={exposureSummary.conditional} />
+                <ExposureMetric label="Voluntary" value={exposureSummary.voluntary} />
+                <ExposureMetric label="Standards" value={exposureSummary.standards} />
+                <ExposureMetric label="Infra" value={exposureSummary.infrastructure} />
+                <ExposureMetric label="Indirect" value={exposureSummary.indirect} />
+              </div>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {EXPOSURE_FILTERS.map((filter) => (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    onClick={() => setExposureFilter(filter.id)}
+                    className={
+                      exposureFilter === filter.id
+                        ? "rounded-md border border-accent bg-accent px-2 py-1 text-[11px] font-medium text-white"
+                        : "rounded-md border border-canvas-line bg-white px-2 py-1 text-[11px] font-medium text-ink-700 hover:border-accent hover:text-accent"
+                    }
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-3 space-y-3">
+                {groupedExposure.map(([effect, rows]) => (
+                  <div key={effect}>
+                    <h4 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-500">
+                      {LAB_EXPOSURE_EFFECT_LABELS[effect]}
+                    </h4>
+                    <ul className="space-y-1.5">
+                      {rows.map((r) => (
+                        <ExposureCard key={r.id} exposure={r} labName={lab.name} />
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+              {visibleExposure.length === 0 && (
+                <p className="mt-3 rounded-lg border border-canvas-line bg-white px-3 py-2 text-xs text-ink-500">
+                  No exposure rows match this quick filter.
+                </p>
+              )}
+            </>
           )}
         </section>
 
@@ -207,4 +245,130 @@ export function LabSidePanel({ labId, onClose, onPinLab, isLabPinned }: Props) {
       </div>
     </aside>
   );
+}
+
+type ExposureFilter = "all" | "binding" | "voluntary" | "standards" | "infrastructure" | "indirect";
+
+const EXPOSURE_FILTERS: Array<{ id: ExposureFilter; label: string }> = [
+  { id: "all", label: "All" },
+  { id: "binding", label: "Binding" },
+  { id: "voluntary", label: "Voluntary" },
+  { id: "standards", label: "Standards" },
+  { id: "infrastructure", label: "Infrastructure" },
+  { id: "indirect", label: "Indirect" },
+];
+
+function filterExposure(exposures: LabRegulatoryExposure[], filter: ExposureFilter) {
+  if (filter === "binding") return exposures.filter((item) => item.legalEffect === "binding");
+  if (filter === "voluntary") return exposures.filter((item) => item.legalEffect === "voluntary");
+  if (filter === "standards") return exposures.filter((item) => item.legalEffect === "standard");
+  if (filter === "infrastructure") {
+    return exposures.filter((item) => item.legalEffect === "infrastructure_constraint");
+  }
+  if (filter === "indirect") return exposures.filter((item) => item.directness === "indirect");
+  return exposures;
+}
+
+function groupExposureByEffect(exposures: LabRegulatoryExposure[]) {
+  const order: LabExposureLegalEffect[] = [
+    "binding",
+    "voluntary",
+    "guidance",
+    "standard",
+    "infrastructure_constraint",
+    "indirect",
+  ];
+  const grouped = new Map<LabExposureLegalEffect, LabRegulatoryExposure[]>();
+  for (const exposure of exposures) {
+    const items = grouped.get(exposure.legalEffect) ?? [];
+    items.push(exposure);
+    grouped.set(exposure.legalEffect, items);
+  }
+  return order
+    .filter((effect) => grouped.has(effect))
+    .map((effect) => [effect, grouped.get(effect)!] as const);
+}
+
+function ExposureMetric({ label, value, strong }: { label: string; value: number; strong?: boolean }) {
+  return (
+    <div className="rounded-lg border border-canvas-line bg-white px-2 py-1.5">
+      <p className={strong ? "text-lg font-semibold text-accent" : "text-lg font-semibold text-ink-900"}>
+        {value}
+      </p>
+      <p className="text-[10px] uppercase tracking-wide text-ink-500">{label}</p>
+    </div>
+  );
+}
+
+function ExposureCard({ exposure, labName }: { exposure: LabRegulatoryExposure; labName: string }) {
+  const target = getLabExposureTarget(exposure);
+  const citation = buildRecordCitation({
+    ...exposure,
+    recordKind: "lab regulatory exposure",
+    recordId: exposure.id,
+    recordName: `${labName} - ${target.name}`,
+    sourceName: exposure.sourceName,
+    sourceUrl: exposure.sourceUrl,
+    claim: exposure.rationale,
+  });
+  return (
+    <li className="rounded-lg border border-canvas-line bg-white px-3 py-2.5 text-xs text-ink-700">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-semibold leading-snug text-ink-900">{target.name}</p>
+          <p className="mt-0.5 text-[11px] uppercase tracking-wide text-ink-500">
+            {LAB_EXPOSURE_TARGET_TYPE_LABELS[exposure.targetType]} · {LAB_EXPOSURE_KIND_LABELS[exposure.exposureKind]}
+          </p>
+        </div>
+        <span className={effectBadgeClass(exposure.legalEffect)}>
+          {LAB_EXPOSURE_EFFECT_LABELS[exposure.legalEffect]}
+        </span>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        <span className="rounded-md bg-canvas px-2 py-0.5 text-[11px] font-medium text-ink-700">
+          {LAB_EXPOSURE_DIRECTNESS_LABELS[exposure.directness]}
+        </span>
+        <span className="rounded-md bg-canvas px-2 py-0.5 text-[11px] font-medium text-ink-700">
+          Strength {exposure.strength}/5
+        </span>
+        {exposure.jurisdiction && (
+          <span className="rounded-md bg-canvas px-2 py-0.5 text-[11px] font-medium text-ink-700">
+            {exposure.jurisdiction}
+          </span>
+        )}
+      </div>
+      <p className="mt-2 leading-relaxed">{exposure.rationale}</p>
+      {exposure.notes && (
+        <p className="mt-2 rounded-md bg-canvas px-2 py-1.5 text-[11px] leading-relaxed text-ink-600">
+          {exposure.notes}
+        </p>
+      )}
+      <div className="mt-2">
+        <VerificationMeta item={exposure} compact />
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <CopyTextButton text={citation} />
+        <SourceLink name={exposure.sourceName} url={exposure.sourceUrl} />
+        <CorrectionLink
+          recordKind="lab_regulatory_exposure"
+          recordId={exposure.id}
+          recordName={`${labName} - ${target.name}`}
+          sourceUrl={exposure.sourceUrl}
+          claim={exposure.rationale}
+          compact
+        />
+      </div>
+    </li>
+  );
+}
+
+function effectBadgeClass(effect: LabExposureLegalEffect) {
+  const base = "shrink-0 rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide";
+  if (effect === "binding") return `${base} border-accent/30 bg-accent/10 text-accent`;
+  if (effect === "voluntary") return `${base} border-amber-200 bg-amber-50 text-amber-900`;
+  if (effect === "standard") return `${base} border-violet-200 bg-violet-50 text-violet-900`;
+  if (effect === "infrastructure_constraint") {
+    return `${base} border-slate-300 bg-slate-100 text-slate-800`;
+  }
+  return `${base} border-blue-200 bg-blue-50 text-blue-900`;
 }

@@ -7,6 +7,7 @@ import { FRONTIER_LABS, LAB_BY_ID } from "../data/frontierLabs";
 import { INFRASTRUCTURE_NODES, INFRA_BY_ID } from "../data/infrastructure";
 import { DEPENDENCY_EDGES } from "../data/dependencies";
 import { SUBNATIONAL_AI_RULES } from "../data/subnationalRules";
+import { LAB_REGULATORY_EXPOSURES } from "../data/labRegulatoryExposures";
 import { hasCyrillic } from "./translateSeedDataToEnglish";
 import {
   assessSourceUrl,
@@ -189,6 +190,39 @@ export function validateData(): ValidationReport {
     }
   }
 
+  // Lab regulatory exposure
+  const labExposureIds = new Set<string>();
+  for (const exposure of LAB_REGULATORY_EXPOSURES) {
+    if (!exposure.id) errors.push("Lab exposure missing id");
+    if (labExposureIds.has(exposure.id)) errors.push(`Duplicate lab exposure id: ${exposure.id}`);
+    labExposureIds.add(exposure.id);
+    if (!LAB_BY_ID[exposure.labId]) {
+      errors.push(`Lab exposure ${exposure.id} references unknown lab ${exposure.labId}`);
+    }
+    if (exposure.strength < 1 || exposure.strength > 5) {
+      errors.push(`Lab exposure ${exposure.id} strength outside 1-5 range`);
+    }
+    validateSource("Lab exposure", exposure.id, exposure);
+    validateDate(`Lab exposure ${exposure.id} lastVerified`, exposure.lastVerified);
+
+    const targetOk =
+      exposure.targetType === "national_rule"
+        ? !!NATIONAL_REG_BY_ID[exposure.targetId]
+        : exposure.targetType === "infrastructure"
+          ? !!INFRA_BY_ID[exposure.targetId]
+          : !!INSTRUMENT_BY_ID[exposure.targetId];
+    if (!targetOk) {
+      errors.push(`Lab exposure ${exposure.id} references unknown ${exposure.targetType} target ${exposure.targetId}`);
+    }
+
+    if (exposure.legalEffect === "binding" && (exposure.sourceKind !== "official" || exposure.confidence !== "high")) {
+      errors.push(`Binding lab exposure ${exposure.id} must use official high-confidence source metadata`);
+    }
+    if (exposure.directness !== "direct" && !exposure.notes && !exposure.verificationNotes) {
+      warnings.push(`Indirect or conditional lab exposure ${exposure.id} lacks a caveat note`);
+    }
+  }
+
   // Infrastructure
   const infraIds = new Set<string>();
   for (const node of INFRASTRUCTURE_NODES) {
@@ -255,7 +289,7 @@ export function runDevValidation(): void {
     const report = validateData();
     if (report.errors.length === 0 && report.warnings.length === 0) {
       console.info(
-        `%c[Data] OK · ${COUNTRIES.length} countries · ${INTERNATIONAL_INSTRUMENTS.length} instruments · ${NATIONAL_AI_REGULATIONS.length} national regs · ${SUBNATIONAL_AI_RULES.length} subnational rules · ${FRONTIER_LABS.length} frontier labs · ${INFRASTRUCTURE_NODES.length} infrastructure nodes · ${DEPENDENCY_EDGES.length} edges · ${INTERNATIONAL_PARTICIPATION.length} participation rows`,
+        `%c[Data] OK · ${COUNTRIES.length} countries · ${INTERNATIONAL_INSTRUMENTS.length} instruments · ${NATIONAL_AI_REGULATIONS.length} national regs · ${SUBNATIONAL_AI_RULES.length} subnational rules · ${FRONTIER_LABS.length} frontier labs · ${LAB_REGULATORY_EXPOSURES.length} lab exposure rows · ${INFRASTRUCTURE_NODES.length} infrastructure nodes · ${DEPENDENCY_EDGES.length} edges · ${INTERNATIONAL_PARTICIPATION.length} participation rows`,
         "color:#1E40AF;font-weight:600"
       );
     } else {

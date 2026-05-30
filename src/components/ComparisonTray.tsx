@@ -7,6 +7,7 @@ import { PARTICIPATION_BY_INSTRUMENT } from "../data/participation";
 import { getCountryGovernanceSummary } from "../utils/getCountryGovernanceSummary";
 import { INSTRUMENT_BINDING_LABELS } from "../utils/getParticipationLabel";
 import { isConfirmedBindingNationalRegulation } from "../utils/governanceTaxonomy";
+import { getLabRegulatoryExposures, summarizeLabExposures } from "../utils/labExposure";
 
 interface Props {
   items: CompareItem[];
@@ -137,6 +138,7 @@ function CompareCard({
   if (item.kind === "lab") {
     const lab = LAB_BY_ID[item.id];
     if (!lab) return null;
+    const exposureSummary = summarizeLabExposures(getLabRegulatoryExposures(lab.id));
     return (
       <article className="rounded-lg border border-canvas-line bg-canvas/40 p-3">
         <CompareHeader label="Frontier lab" title={lab.name} item={item} onRemove={onRemove} />
@@ -144,7 +146,8 @@ function CompareCard({
           <Metric label="HQ" value={lab.hqCountryName} />
           <Metric label="Power" value={`${lab.powerScore}/5`} strong={lab.powerScore >= 4} />
           <Metric label="Models" value={lab.flagshipModels.slice(0, 3).join(", ")} />
-          <Metric label="Exposure" value={lab.regulatoryExposureIds.length} />
+          <Metric label="Exposure" value={exposureSummary.total} />
+          <Metric label="Binding" value={exposureSummary.binding} strong={exposureSummary.binding > 0} />
           <Metric label="FMF" value={lab.isFMFMember ? "Yes" : "No"} />
           <Metric label="Safety" value={lab.safetyFramework?.maturity ?? "None"} />
         </dl>

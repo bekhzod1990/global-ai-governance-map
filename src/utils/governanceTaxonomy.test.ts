@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { INSTRUMENT_BY_ID } from "../data/internationalInstruments";
-import { LAB_BY_ID } from "../data/frontierLabs";
 import { NATIONAL_REG_BY_ID } from "../data/nationalAIRegulations";
 import { PARTICIPATION_BY_INSTRUMENT } from "../data/participation";
 import { SUBNATIONAL_BY_ID } from "../data/subnationalRules";
+import { getLabRegulatoryExposures } from "./labExposure";
 import {
   assessSourceUrl,
   classifyInternationalInstrument,
@@ -89,7 +89,7 @@ describe("governance taxonomy", () => {
     expect(PARTICIPATION_BY_INSTRUMENT["nist-genai-profile"] ?? []).toEqual([]);
     expect(PARTICIPATION_BY_INSTRUMENT["cen-cenelec-ai-act-standards"].some((row) => row.countryIso3 === "EUU")).toBe(true);
 
-    expect(LAB_BY_ID.openai.regulatoryExposureIds).toContain("seoul-frontier-ai-safety-commitments");
-    expect(LAB_BY_ID.deepseek.regulatoryExposureIds).not.toContain("seoul-frontier-ai-safety-commitments");
+    expect(getLabRegulatoryExposures("openai").some((row) => row.targetId === "seoul-frontier-ai-safety-commitments")).toBe(true);
+    expect(getLabRegulatoryExposures("deepseek").some((row) => row.targetId === "seoul-frontier-ai-safety-commitments")).toBe(false);
   });
 });

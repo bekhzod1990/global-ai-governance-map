@@ -4,6 +4,7 @@ import { EU_MEMBER_ISO3 } from "../data/euMembers";
 import { FRONTIER_LABS } from "../data/frontierLabs";
 import { INFRASTRUCTURE_NODES } from "../data/infrastructure";
 import { INTERNATIONAL_INSTRUMENTS } from "../data/internationalInstruments";
+import { LAB_REGULATORY_EXPOSURES } from "../data/labRegulatoryExposures";
 import { NATIONAL_AI_REGULATIONS } from "../data/nationalAIRegulations";
 import { OUT_OF_SCOPE_ITEMS } from "../data/outOfScope";
 import { INTERNATIONAL_PARTICIPATION } from "../data/participation";
@@ -11,7 +12,7 @@ import { SOURCE_NOTES } from "../data/sourceNotes";
 import { SUBNATIONAL_AI_RULES } from "../data/subnationalRules";
 import { DATA_SNAPSHOT_DATE } from "./governanceTaxonomy";
 import { DATASET_SCHEMA_ID, DATASET_SCHEMA_VERSION } from "./datasetSchema";
-import { DEFAULT_FILTER_STATE, type FilterState } from "../types";
+import { DEFAULT_FILTER_STATE, type FilterState, type LabRegulatoryExposure } from "../types";
 import { countActiveFilters, filterCountries } from "./filterCountries";
 
 export { DATASET_SCHEMA_VERSION } from "./datasetSchema";
@@ -32,6 +33,7 @@ export function buildDatasetSnapshot() {
       countries: COUNTRIES.filter((country) => country.iso3 !== "EUU").length,
       euMembers: EU_MEMBER_ISO3.length,
       frontierLabs: FRONTIER_LABS.length,
+      labRegulatoryExposures: LAB_REGULATORY_EXPOSURES.length,
       internationalInstruments: INTERNATIONAL_INSTRUMENTS.length,
       internationalParticipationRows: INTERNATIONAL_PARTICIPATION.length,
       nationalAIRegulations: NATIONAL_AI_REGULATIONS.length,
@@ -45,6 +47,7 @@ export function buildDatasetSnapshot() {
       countries: COUNTRIES,
       euMembers: EU_MEMBER_ISO3,
       frontierLabs: FRONTIER_LABS,
+      labRegulatoryExposures: LAB_REGULATORY_EXPOSURES,
       internationalInstruments: INTERNATIONAL_INSTRUMENTS,
       internationalParticipation: INTERNATIONAL_PARTICIPATION,
       nationalAIRegulations: NATIONAL_AI_REGULATIONS,
@@ -131,6 +134,10 @@ export function buildFilteredDatasetSnapshot(filters: FilterState) {
     if (labIds.size) return labIds.has(lab.id);
     return countryIso3s.has(lab.hqIso3);
   });
+  const filteredLabIds = new Set(filteredLabs.map((lab) => lab.id));
+  const filteredLabRegulatoryExposures = LAB_REGULATORY_EXPOSURES.filter((exposure) =>
+    exposureMatchesExportScope(exposure, filters, filteredLabIds)
+  );
 
   return {
     ...buildDatasetSnapshot(),
@@ -140,6 +147,7 @@ export function buildFilteredDatasetSnapshot(filters: FilterState) {
       countries: filteredCountries.length,
       euMembers: filteredCountries.filter((country) => country.isEUMember).length,
       frontierLabs: filteredLabs.length,
+      labRegulatoryExposures: filteredLabRegulatoryExposures.length,
       internationalInstruments: filteredInstruments.length,
       internationalParticipationRows: filteredParticipation.length,
       nationalAIRegulations: filteredNational.length,
@@ -153,6 +161,7 @@ export function buildFilteredDatasetSnapshot(filters: FilterState) {
       countries: filteredCountries,
       euMembers: EU_MEMBER_ISO3.filter((iso3) => countryIso3s.has(iso3)),
       frontierLabs: filteredLabs,
+      labRegulatoryExposures: filteredLabRegulatoryExposures,
       internationalInstruments: filteredInstruments,
       internationalParticipation: filteredParticipation,
       nationalAIRegulations: filteredNational,
@@ -201,6 +210,30 @@ function getFilteredLabIds(filters: FilterState) {
     );
   }
   return unique(labIds);
+}
+
+function exposureMatchesExportScope(
+  exposure: LabRegulatoryExposure,
+  filters: FilterState,
+  filteredLabIds: Set<string>
+) {
+  const hasLabScopedFilter =
+    filters.selectedLabIds.length > 0 ||
+    filters.selectedRegions.length > 0 ||
+    filters.hasBindingNationalLaw !== "any" ||
+    filters.hasAnyAIRule !== "any" ||
+    filters.frontierAIRelevant !== "any" ||
+    Boolean(filters.searchQuery.trim());
+
+  if (hasLabScopedFilter && !filteredLabIds.has(exposure.labId)) return false;
+  if (filters.selectedInstrumentIds.length && !filters.selectedInstrumentIds.includes(exposure.targetId)) {
+    return false;
+  }
+  if (filters.selectedBindingStatuses.length) {
+    const instrument = INTERNATIONAL_INSTRUMENTS.find((item) => item.id === exposure.targetId);
+    if (!instrument || !filters.selectedBindingStatuses.includes(instrument.bindingStatus)) return false;
+  }
+  return true;
 }
 
 function unique<T>(items: T[]): T[] {

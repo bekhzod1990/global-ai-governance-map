@@ -186,9 +186,52 @@ export interface FrontierLab extends VerificationMetadata {
     sourceUrl: string;
   };
   isFMFMember: boolean;
-  regulatoryExposureIds: string[];
   powerScore: number; // 1-5
   summary: string;
+  sourceName: string;
+  sourceUrl: string;
+  notes?: string;
+}
+
+export type LabExposureTargetType =
+  | "national_rule"
+  | "international_instrument"
+  | "infrastructure"
+  | "standard"
+  | "company_commitment";
+
+export type LabExposureKind =
+  | "hq_jurisdiction"
+  | "market_access"
+  | "eu_applicability"
+  | "safety_institute_coordination"
+  | "company_commitment"
+  | "standards_influence"
+  | "compute_dependency"
+  | "export_control_dependency"
+  | "policy_influence";
+
+export type LabExposureLegalEffect =
+  | "binding"
+  | "voluntary"
+  | "standard"
+  | "guidance"
+  | "infrastructure_constraint"
+  | "indirect";
+
+export type LabExposureDirectness = "direct" | "conditional" | "indirect";
+
+export interface LabRegulatoryExposure extends VerificationMetadata {
+  id: string;
+  labId: string;
+  targetType: LabExposureTargetType;
+  targetId: string;
+  exposureKind: LabExposureKind;
+  legalEffect: LabExposureLegalEffect;
+  directness: LabExposureDirectness;
+  strength: number;
+  jurisdiction?: string;
+  rationale: string;
   sourceName: string;
   sourceUrl: string;
   notes?: string;

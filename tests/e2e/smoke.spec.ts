@@ -44,6 +44,15 @@ test.describe("governance map smoke flows", () => {
       .click();
 
     await expect(page.getByRole("dialog", { name: "OpenAI frontier-lab details" })).toBeVisible();
+    const openAiDrawer = page.getByRole("dialog", { name: "OpenAI frontier-lab details" });
+    await expect(openAiDrawer.getByText("Regulatory exposure")).toBeVisible();
+    await expect(openAiDrawer.getByRole("button", { name: "Binding" })).toBeVisible();
+    await expect(openAiDrawer.getByRole("button", { name: "Standards" })).toBeVisible();
+    await expect(openAiDrawer.getByText("Infra", { exact: true }).first()).toBeVisible();
+    await openAiDrawer.getByRole("button", { name: "Standards" }).click();
+    await expect(openAiDrawer.getByText("ISO/IEC 42001:2023").first()).toBeVisible();
+    await openAiDrawer.getByRole("button", { name: "Infrastructure" }).click();
+    await expect(openAiDrawer.getByText("Advanced AI chips").first()).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog", { name: "OpenAI frontier-lab details" })).toBeHidden();
 
@@ -106,6 +115,7 @@ test.describe("governance map smoke flows", () => {
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog", { name: "Methodology" })).toBeHidden();
 
+    await page.goto("/");
     await page.getByRole("tab", { name: "Table" }).click();
     await expect(page.getByRole("heading", { name: "Research table" })).toBeVisible();
     await page.getByRole("button", { name: "Instruments" }).click();
@@ -113,6 +123,14 @@ test.describe("governance map smoke flows", () => {
     await page.getByRole("button", { name: "Export CSV" }).click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toBe("global-ai-governance-map-instruments.csv");
+
+    await page.getByRole("button", { name: "Exposure" }).click();
+    await expect(page.getByText("EU AI Act", { exact: true }).first()).toBeVisible();
+    await page.getByRole("button", { name: "Strength" }).click();
+    const exposureDownloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export CSV" }).click();
+    const exposureDownload = await exposureDownloadPromise;
+    expect(exposureDownload.suggestedFilename()).toBe("global-ai-governance-map-exposure.csv");
   });
 
   test("keeps map result scope clear while filtering", async ({ page }) => {

@@ -7,14 +7,23 @@ import { INTERNATIONAL_INSTRUMENTS, INSTRUMENT_BY_ID } from "../data/internation
 import { NATIONAL_AI_REGULATIONS } from "../data/nationalAIRegulations";
 import { INTERNATIONAL_PARTICIPATION } from "../data/participation";
 import { SUBNATIONAL_AI_RULES } from "../data/subnationalRules";
-import type { FilterState, VerificationMetadata } from "../types";
+import { LAB_REGULATORY_EXPOSURES } from "../data/labRegulatoryExposures";
+import type { FilterState, LabRegulatoryExposure, VerificationMetadata } from "../types";
 import { downloadTextFile } from "../utils/exportDataset";
 import { filterCountries } from "../utils/filterCountries";
 import { DATA_CONFIDENCE_LABELS, SOURCE_KIND_LABELS, VERIFICATION_STATUS_LABELS } from "../utils/getVerificationLabel";
 import { getCountryGovernanceSummary } from "../utils/getCountryGovernanceSummary";
 import { isConfirmedBindingNationalRegulation } from "../utils/governanceTaxonomy";
+import {
+  getLabExposureTarget,
+  getLabRegulatoryExposures,
+  LAB_EXPOSURE_DIRECTNESS_LABELS,
+  LAB_EXPOSURE_EFFECT_LABELS,
+  LAB_EXPOSURE_KIND_LABELS,
+  summarizeLabExposures,
+} from "../utils/labExposure";
 
-type DatasetKey = "countries" | "instruments" | "national" | "labs" | "participation" | "sources";
+type DatasetKey = "countries" | "instruments" | "national" | "labs" | "exposure" | "participation" | "sources";
 
 interface Props {
   filters: FilterState;
@@ -43,6 +52,7 @@ const DATASETS: Array<{ key: DatasetKey; label: string }> = [
   { key: "instruments", label: "Instruments" },
   { key: "national", label: "National rules" },
   { key: "labs", label: "Labs" },
+  { key: "exposure", label: "Exposure" },
   { key: "participation", label: "Participation" },
   { key: "sources", label: "Sources" },
 ];
@@ -83,6 +93,18 @@ const COLUMNS: Record<DatasetKey, TableColumn[]> = {
     { key: "fmf", label: "FMF" },
     { key: "exposure", label: "Exposure count" },
     { key: "confidence", label: "Confidence" },
+  ],
+  exposure: [
+    { key: "lab", label: "Lab" },
+    { key: "target", label: "Exposure target" },
+    { key: "kind", label: "Kind" },
+    { key: "effect", label: "Legal effect" },
+    { key: "directness", label: "Directness" },
+    { key: "strength", label: "Strength" },
+    { key: "jurisdiction", label: "Jurisdiction / hook" },
+    { key: "confidence", label: "Confidence" },
+    { key: "lastVerified", label: "Last verified" },
+    { key: "source", label: "Source" },
   ],
   participation: [
     { key: "country", label: "Country" },
@@ -313,16 +335,38 @@ function buildRows(
       if (filters.selectedLabIds.length && !filters.selectedLabIds.includes(lab.id)) return false;
       return true;
     }).map((lab) =>
-      row(`lab:${lab.id}`, {
-        name: lab.name,
-        hq: lab.hqCountryName,
-        models: lab.flagshipModels.join("; "),
-        power: lab.powerScore,
-        fmf: lab.isFMFMember ? "Yes" : "No",
-        exposure: lab.regulatoryExposureIds.length,
-        confidence: confidenceLabel(lab),
-      }, { label: "Open", onClick: () => onSelectLab(lab.id) })
+      {
+        const exposureSummary = summarizeLabExposures(getLabRegulatoryExposures(lab.id));
+        return row(`lab:${lab.id}`, {
+          name: lab.name,
+          hq: lab.hqCountryName,
+          models: lab.flagshipModels.join("; "),
+          power: lab.powerScore,
+          fmf: lab.isFMFMember ? "Yes" : "No",
+          exposure: exposureSummary.total,
+          confidence: confidenceLabel(lab),
+        }, { label: "Open", onClick: () => onSelectLab(lab.id) });
+      }
     );
+  }
+
+  if (dataset === "exposure") {
+    return LAB_REGULATORY_EXPOSURES.filter((exposure) => exposureMatchesFilters(exposure, filters)).map((exposure) => {
+      const lab = FRONTIER_LABS.find((item) => item.id === exposure.labId);
+      const target = getLabExposureTarget(exposure);
+      return row(`exposure:${exposure.id}`, {
+        lab: lab?.name ?? exposure.labId,
+        target: target.name,
+        kind: LAB_EXPOSURE_KIND_LABELS[exposure.exposureKind],
+        effect: LAB_EXPOSURE_EFFECT_LABELS[exposure.legalEffect],
+        directness: LAB_EXPOSURE_DIRECTNESS_LABELS[exposure.directness],
+        strength: exposure.strength,
+        jurisdiction: exposure.jurisdiction ?? "",
+        confidence: confidenceLabel(exposure),
+        lastVerified: exposure.lastVerified ?? "",
+        source: exposure.sourceName,
+      }, lab ? { label: "Lab", onClick: () => onSelectLab(lab.id) } : undefined);
+    });
   }
 
   if (dataset === "participation") {
@@ -360,6 +404,7 @@ function sourceRows(): TableRow[] {
     ...NATIONAL_AI_REGULATIONS.map((item) => toSourceEntry("National rule", item)),
     ...SUBNATIONAL_AI_RULES.map((item) => toSourceEntry("Subnational rule", item)),
     ...FRONTIER_LABS.map((item) => toSourceEntry("Frontier lab", item)),
+    ...LAB_REGULATORY_EXPOSURES.map((item) => toLabExposureSourceEntry(item)),
     ...INFRASTRUCTURE_NODES.map((item) => toSourceEntry("Infrastructure", item)),
   ];
 
@@ -394,6 +439,23 @@ function toSourceEntry(
   };
 }
 
+function toLabExposureSourceEntry(item: LabRegulatoryExposure) {
+  const lab = FRONTIER_LABS.find((candidate) => candidate.id === item.labId);
+  const target = getLabExposureTarget(item);
+  return {
+    kind: "Lab exposure",
+    id: item.id,
+    name: `${lab?.name ?? item.labId} - ${target.name}`,
+    sourceName: item.sourceName,
+    sourceUrl: item.sourceUrl,
+    sourceKind: item.sourceKind,
+    verificationStatus: item.verificationStatus,
+    confidence: item.confidence,
+    lastVerified: item.lastVerified,
+    verificationNotes: item.verificationNotes,
+  };
+}
+
 function row(id: string, values: Record<string, string | number>, action?: TableRow["action"]): TableRow {
   return {
     id,
@@ -405,6 +467,19 @@ function row(id: string, values: Record<string, string | number>, action?: Table
 
 function confidenceLabel(item: VerificationMetadata): string {
   return item.confidence ? DATA_CONFIDENCE_LABELS[item.confidence] : "";
+}
+
+function exposureMatchesFilters(exposure: LabRegulatoryExposure, filters: FilterState): boolean {
+  if (filters.selectedLabIds.length && !filters.selectedLabIds.includes(exposure.labId)) return false;
+  if (filters.selectedInstrumentIds.length && !filters.selectedInstrumentIds.includes(exposure.targetId)) {
+    return false;
+  }
+  if (filters.selectedBindingStatuses.length) {
+    const target = getLabExposureTarget(exposure);
+    const instrument = INSTRUMENT_BY_ID[target.id];
+    if (!instrument || !filters.selectedBindingStatuses.includes(instrument.bindingStatus)) return false;
+  }
+  return true;
 }
 
 function csvCell(value: string | number): string {

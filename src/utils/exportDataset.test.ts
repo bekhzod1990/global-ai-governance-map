@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { COUNTRIES } from "../data/countries";
 import { FRONTIER_LABS } from "../data/frontierLabs";
 import { INTERNATIONAL_INSTRUMENTS } from "../data/internationalInstruments";
+import { LAB_REGULATORY_EXPOSURES } from "../data/labRegulatoryExposures";
 import { NATIONAL_AI_REGULATIONS } from "../data/nationalAIRegulations";
 import { DATA_SNAPSHOT_DATE } from "./governanceTaxonomy";
 import {
@@ -27,10 +28,12 @@ describe("dataset export helpers", () => {
     });
     expect(snapshot.counts.countries).toBe(COUNTRIES.filter((country) => country.iso3 !== "EUU").length);
     expect(snapshot.counts.frontierLabs).toBe(FRONTIER_LABS.length);
+    expect(snapshot.counts.labRegulatoryExposures).toBe(LAB_REGULATORY_EXPOSURES.length);
     expect(snapshot.counts.internationalInstruments).toBe(INTERNATIONAL_INSTRUMENTS.length);
     expect(snapshot.counts.nationalAIRegulations).toBe(NATIONAL_AI_REGULATIONS.length);
     expect(snapshot.data.countries).toBe(COUNTRIES);
     expect(snapshot.data.frontierLabs).toBe(FRONTIER_LABS);
+    expect(snapshot.data.labRegulatoryExposures).toBe(LAB_REGULATORY_EXPOSURES);
     expect(validateDatasetSnapshotShape(snapshot)).toEqual([]);
   });
 
@@ -75,6 +78,7 @@ describe("dataset export helpers", () => {
     });
 
     expect(filtered.data.frontierLabs.map((lab) => lab.id)).toContain("openai");
+    expect(filtered.data.labRegulatoryExposures.map((exposure) => exposure.labId)).toContain("openai");
     expect(filtered.data.countries.map((country) => country.iso3)).toContain("USA");
   });
 });
